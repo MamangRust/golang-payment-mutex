@@ -2,7 +2,9 @@ package repository
 
 import (
 	"fmt"
+	"payment-mutex/internal/domain/requests"
 	"payment-mutex/internal/models"
+	"time"
 
 	"sync"
 )
@@ -50,6 +52,26 @@ func (ds *transferRepository) Read(transferID int) (*models.Transfer, error) {
 	return &transfer, nil
 }
 
+func (ds *transferRepository) ReadByUsersID(userID int) (*[]models.Transfer, error) {
+	ds.mu.RLock()
+
+	defer ds.mu.RUnlock()
+
+	transfers := make([]models.Transfer, 0, len(ds.transfers))
+
+	for _, transfer := range ds.transfers {
+		if transfer.TransferFrom == userID || transfer.TransferTo == userID {
+			transfers = append(transfers, transfer)
+		}
+	}
+
+	if len(transfers) == 0 {
+		return nil, fmt.Errorf("not transfer not found for user id %d", userID)
+	}
+
+	return &transfers, nil
+}
+
 func (ds *transferRepository) ReadByUserID(userID int) (*models.Transfer, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
@@ -63,30 +85,61 @@ func (ds *transferRepository) ReadByUserID(userID int) (*models.Transfer, error)
 	return &transfer, nil
 }
 
-func (ds *transferRepository) Create(transfer models.Transfer) (*models.Transfer, error) {
+func (ds *transferRepository) Create(request requests.CreateTransferRequest) (*models.Transfer, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	if _, exists := ds.transfers[transfer.TransferID]; exists {
-		return nil, fmt.Errorf("transfer with ID %d already exists", transfer.TransferID)
+	transfer := models.Transfer{
+		TransferID:     ds.nextID,
+		TransferFrom:   request.TransferFrom,
+		TransferTo:     request.TransferTo,
+		TransferAmount: request.TransferAmount,
+		TransferTime:   time.Now(),
 	}
 
-	transfer.TransferID = ds.nextID
+	ds.transfers[transfer.TransferID] = transfer
+
 	ds.nextID++
 
 	return &transfer, nil
 }
 
-func (ds *transferRepository) Update(newTransfer models.Transfer) (*models.Transfer, error) {
+func (ds *transferRepository) Update(request requests.UpdateTransferRequest) (*models.Transfer, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	if _, ok := ds.transfers[newTransfer.TransferID]; ok {
-		ds.transfers[newTransfer.TransferID] = newTransfer
-		return &newTransfer, nil
+	transfer, exists := ds.transfers[request.TransferID]
+
+	if !exists {
+		return nil, fmt.Errorf("transfer with ID %d not found", request.TransferID)
 	}
 
-	return nil, fmt.Errorf("transfer with ID %d not found", newTransfer.TransferID)
+	transfer.TransferFrom = request.TransferFrom
+	transfer.TransferTo = request.TransferTo
+	transfer.TransferAmount = request.TransferAmount
+	transfer.TransferTime = time.Now()
+	ds.transfers[request.TransferID] = transfer
+
+	return &transfer, nil
+}
+
+func (ds *transferRepository) UpdateAmount(request requests.UpdateTransferAmountRequest) (*models.Transfer, error) {
+	ds.mu.Lock()
+	defer ds.mu.Unlock()
+
+	transfer, exists := ds.transfers[request.TransferID]
+
+	if !exists {
+		return nil, fmt.Errorf("transfer with id %d not found", request.TransferID)
+	}
+
+	transfer.TransferAmount = request.TransferAmount
+	transfer.TransferTime = time.Now()
+
+	ds.transfers[request.TransferID] = transfer
+
+	return &transfer, nil
+
 }
 
 func (ds *transferRepository) Delete(transferID int) error {

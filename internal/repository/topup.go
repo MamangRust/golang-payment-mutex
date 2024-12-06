@@ -2,7 +2,9 @@ package repository
 
 import (
 	"fmt"
+	"payment-mutex/internal/domain/requests"
 	"payment-mutex/internal/models"
+	"time"
 
 	"sync"
 )
@@ -64,15 +66,39 @@ func (ds *topupRepository) ReadByUserID(userID int) (*models.Topup, error) {
 	return &topup, nil
 }
 
-func (ds *topupRepository) Create(topup models.Topup) (*models.Topup, error) {
+func (ds *topupRepository) ReadByUsersID(userID int) (*[]models.Topup, error) {
+	ds.mu.RLock()
+
+	defer ds.mu.RUnlock()
+
+	topups := []models.Topup{}
+
+	for _, topup := range ds.topups {
+		if topup.UserID == userID {
+			topups = append(topups, topup)
+		}
+	}
+
+	if len(topups) == 0 {
+		return nil, fmt.Errorf("no topups not found for user ID %d", userID)
+	}
+
+	return &topups, nil
+}
+
+func (ds *topupRepository) Create(request requests.CreateTopupRequest) (*models.Topup, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	if _, exists := ds.topups[topup.TopupID]; exists {
-		return nil, fmt.Errorf("topup with ID %d already exists", topup.TopupID)
+	topup := models.Topup{
+		TopupID:     ds.nextID,
+		UserID:      request.UserID,
+		TopupNo:     request.TopupNo,
+		TopupAmount: request.TopupAmount,
+		TopupMethod: request.TopupMethod,
+		TopupTime:   time.Now(),
 	}
 
-	topup.TopupID = ds.nextID
 	ds.topups[topup.TopupID] = topup
 
 	ds.nextID++
@@ -80,16 +106,42 @@ func (ds *topupRepository) Create(topup models.Topup) (*models.Topup, error) {
 	return &topup, nil
 }
 
-func (ds *topupRepository) Update(newTopup models.Topup) (*models.Topup, error) {
+func (ds *topupRepository) Update(request requests.UpdateTopupRequest) (*models.Topup, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	if _, ok := ds.topups[newTopup.TopupID]; ok {
-		ds.topups[newTopup.TopupID] = newTopup
-		return &newTopup, nil
+	topup, exists := ds.topups[request.TopupID]
+
+	if !exists {
+		return nil, fmt.Errorf("topup with ID %d not found", request.TopupID)
+
 	}
 
-	return nil, fmt.Errorf("topup with ID %d not found", newTopup.TopupID)
+	topup.UserID = request.UserID
+	topup.TopupAmount = request.TopupAmount
+	topup.TopupMethod = request.TopupMethod
+	topup.TopupTime = time.Now()
+	ds.topups[request.TopupID] = topup
+
+	return &topup, nil
+}
+
+func (ds *topupRepository) UpdateAmount(request requests.UpdateTopupAmount) (*models.Topup, error) {
+	ds.mu.Lock()
+
+	defer ds.mu.Unlock()
+
+	topup, exists := ds.topups[request.TopupID]
+
+	if !exists {
+		return nil, fmt.Errorf("topup with ID %d not found", request.TopupID)
+	}
+
+	topup.TopupAmount = request.TopupAmount
+
+	ds.topups[request.TopupID] = topup
+
+	return &topup, nil
 }
 
 func (ds *topupRepository) Delete(topupID int) error {

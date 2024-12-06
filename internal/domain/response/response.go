@@ -26,7 +26,6 @@ func ResponseToken(w http.ResponseWriter, message string, token string, status i
 	}
 
 	err := json.NewEncoder(w).Encode(res)
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,14 +39,13 @@ func ResponseMessage(w http.ResponseWriter, message string, data interface{}, st
 	}
 
 	err := json.NewEncoder(w).Encode(res)
-
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
 func ResponseError(w http.ResponseWriter, status int, message string) {
-	w.Header().Set("Content-Type", "application/json") // pastikan header ditetapkan sebelum WriteHeader
+	w.Header().Set("Content-Type", "application/json")
 
 	w.WriteHeader(status)
 
@@ -58,7 +56,6 @@ func ResponseError(w http.ResponseWriter, status int, message string) {
 	}
 
 	err := json.NewEncoder(w).Encode(res)
-
 	if err != nil {
 		log.Fatal("Error encoding response: ", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)

@@ -1,6 +1,7 @@
 package requests
 
 import (
+	"errors"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -19,27 +20,58 @@ type UpdateSaldoRequest struct {
 	WithdrawTime   time.Time `json:"withdraw_time" validate:"required_without=WithdrawAmount"`
 }
 
+type UpdateSaldoBalance struct {
+	UserID       int `json:"user_id" validate:"required,min=1"`
+	TotalBalance int `json:"total_balance" validate:"required,min=50000"`
+}
+
+type UpdateSaldoWithdraw struct {
+	UserID         int        `json:"user_id" validate:"required,min=1"`
+	TotalBalance   int        `json:"total_balance" validate:"required,min=50000"`
+	WithdrawAmount *int       `json:"withdraw_amount" validate:"omitempty,gte=0"`
+	WithdrawTime   *time.Time `json:"withdraw_time" validate:"omitempty"`
+}
+
 func (r *CreateSaldoRequest) Validate() error {
 	validate := validator.New()
-
 	err := validate.Struct(r)
-
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 
 func (r *UpdateSaldoRequest) Validate() error {
 	validate := validator.New()
-
 	err := validate.Struct(r)
-
 	if err != nil {
 		return err
 	}
-
 	return nil
+}
 
+func (r *UpdateSaldoBalance) Validate() error {
+	validate := validator.New()
+	if err := validate.Struct(r); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *UpdateSaldoWithdraw) Validate() error {
+	validate := validator.New()
+	if err := validate.Struct(r); err != nil {
+		return err
+	}
+
+	if r.WithdrawAmount != nil && r.WithdrawTime == nil {
+		return errors.New("withdraw time must be provided if withdraw amount is provided")
+	}
+	if r.WithdrawAmount == nil && r.WithdrawTime != nil {
+		return errors.New("withdraw amount must be provided if withdraw time is provided")
+	}
+	if r.WithdrawAmount != nil && *r.WithdrawAmount > r.TotalBalance {
+		return errors.New("withdraw amount cannot be greater than total balance")
+	}
+	return nil
 }

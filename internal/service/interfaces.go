@@ -13,6 +13,7 @@ type AuthService interface {
 type SaldoService interface {
 	FindAll() (*[]models.Saldo, error)
 	FindByUserID(userID int) (*models.Saldo, error)
+	FindByUsersID(userID int) (*[]models.Saldo, error)
 	FindById(saldoID int) (*models.Saldo, error)
 	Create(requests requests.CreateSaldoRequest) (*models.Saldo, error)
 	Update(requests requests.UpdateSaldoRequest) (*models.Saldo, error)
@@ -21,8 +22,9 @@ type SaldoService interface {
 
 type TopupService interface {
 	FindAll() (*[]models.Topup, error)
-	FindByUserID(userID int) (*models.Topup, error)
 	FindById(topupID int) (*models.Topup, error)
+	FindByUserID(userID int) (*models.Topup, error)
+	FindByUsersID(userID int) (*[]models.Topup, error)
 	Create(requests requests.CreateTopupRequest) (*models.Topup, error)
 	Update(requests requests.UpdateTopupRequest) (*models.Topup, error)
 	Delete(topupID int) error
@@ -30,8 +32,9 @@ type TopupService interface {
 
 type TransferService interface {
 	FindAll() (*[]models.Transfer, error)
-	FindByUserID(userID int) (*models.Transfer, error)
 	FindById(transferID int) (*models.Transfer, error)
+	FindByUsersID(userID int) (*[]models.Transfer, error)
+	FindByUserID(userID int) (*models.Transfer, error)
 	Create(requests requests.CreateTransferRequest) (*models.Transfer, error)
 	Update(requests requests.UpdateTransferRequest) (*models.Transfer, error)
 	Delete(transferID int) error
@@ -39,6 +42,7 @@ type TransferService interface {
 
 type WithdrawService interface {
 	FindAll() (*[]models.Withdraw, error)
+	FindByUsersID(userID int) (*[]models.Withdraw, error)
 	FindByUserID(userID int) (*models.Withdraw, error)
 	FindById(withdrawID int) (*models.Withdraw, error)
 	Create(requests requests.CreateWithdrawRequest) (*models.Withdraw, error)

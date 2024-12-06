@@ -38,6 +38,8 @@ func (s *authService) RegisterUser(requests *requests.RegisterRequest) (*models.
 		return nil, err
 	}
 
+	user.FirstName = requests.FirstName
+	user.LastName = requests.LastName
 	user.Email = requests.Email
 	user.Password = hashing
 

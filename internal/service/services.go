@@ -25,13 +25,14 @@ type Deps struct {
 func NewServices(deps Deps) *Services {
 	return &Services{
 		Auth:  NewAuthService(*deps.Hash, deps.Repository.User, deps.Token, deps.Logger),
-		Saldo: NewSaldoService(deps.Repository.Saldo, deps.Logger),
-		Topup: NewTopupService(deps.Repository.Topup, deps.Repository.Saldo, deps.Logger),
+		Saldo: NewSaldoService(deps.Repository.User, deps.Repository.Saldo, deps.Logger),
+		Topup: NewTopupService(deps.Repository.User, deps.Repository.Topup, deps.Repository.Saldo, deps.Logger),
 		Transfer: NewTransferService(
+			deps.Repository.User,
 			deps.Repository.Transfer,
 			deps.Repository.Saldo,
 			deps.Logger,
 		),
-		Withdraw: NewWithdrawService(deps.Repository.Withdraw, deps.Repository.Saldo, deps.Logger),
+		Withdraw: NewWithdrawService(deps.Repository.User, deps.Repository.Withdraw, deps.Repository.Saldo, deps.Logger),
 	}
 }

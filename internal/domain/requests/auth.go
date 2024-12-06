@@ -7,6 +7,14 @@ type AuthRequest struct {
 	Password string `json:"password" validate:"required,min=6"`
 }
 
+type RegisterRequest struct {
+	FirstName       string `json:"firstname"`
+	LastName        string `json:"lastname"`
+	Email           string `json:"email" validate:"required,email"`
+	Password        string `json:"password" validate:"required,min=6"`
+	ConfirmPassword string `json:"confirm_password" validate:"required,min=6"`
+}
+
 func (r *AuthRequest) Validate() error {
 	validate := validator.New()
 
@@ -17,12 +25,6 @@ func (r *AuthRequest) Validate() error {
 	}
 
 	return nil
-}
-
-type RegisterRequest struct {
-	Email           string `json:"email" validate:"required,email"`
-	Password        string `json:"password" validate:"required,min=6"`
-	ConfirmPassword string `json:"confirm_password" validate:"required,min=6"`
 }
 
 func (r *RegisterRequest) Validate() error {

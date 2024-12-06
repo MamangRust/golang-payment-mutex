@@ -11,21 +11,25 @@ import (
 )
 
 type withdrawService struct {
-	saldoRepository repository.SaldoRepository
-	repository      repository.WithdrawRepository
-	logger          logger.Logger
+	userRepository     repository.UserRepository
+	saldoRepository    repository.SaldoRepository
+	withdrawRepository repository.WithdrawRepository
+	logger             logger.Logger
 }
 
-func NewWithdrawService(repository repository.WithdrawRepository, saldoRepository repository.SaldoRepository, logger logger.Logger) *withdrawService {
+func NewWithdrawService(
+	userRepository repository.UserRepository,
+	withdrawRepository repository.WithdrawRepository, saldoRepository repository.SaldoRepository, logger logger.Logger) *withdrawService {
 	return &withdrawService{
-		saldoRepository: saldoRepository,
-		repository:      repository,
-		logger:          logger,
+		userRepository:     userRepository,
+		saldoRepository:    saldoRepository,
+		withdrawRepository: withdrawRepository,
+		logger:             logger,
 	}
 }
 
 func (s *withdrawService) FindAll() (*[]models.Withdraw, error) {
-	withdraw, err := s.repository.ReadAll()
+	withdraw, err := s.withdrawRepository.ReadAll()
 
 	if err != nil {
 		s.logger.Error("failed find all withdraw: ", zap.Error(err))
@@ -36,7 +40,7 @@ func (s *withdrawService) FindAll() (*[]models.Withdraw, error) {
 }
 
 func (s *withdrawService) FindByUserID(userID int) (*models.Withdraw, error) {
-	withdraw, err := s.repository.ReadByUserID(userID)
+	withdraw, err := s.withdrawRepository.ReadByUserID(userID)
 
 	if err != nil {
 		s.logger.Error("failed find withdraw by user id: ", zap.Error(err))
@@ -46,8 +50,19 @@ func (s *withdrawService) FindByUserID(userID int) (*models.Withdraw, error) {
 	return withdraw, nil
 }
 
+func (s *withdrawService) FindByUsersID(userID int) (*[]models.Withdraw, error) {
+	withdraw, err := s.withdrawRepository.ReadByUsersID(userID)
+
+	if err != nil {
+		s.logger.Error("failed find withdraw by users id: ", zap.Error(err))
+		return nil, err
+	}
+
+	return withdraw, nil
+}
+
 func (s *withdrawService) FindById(withdrawID int) (*models.Withdraw, error) {
-	withdraw, err := s.repository.Read(withdrawID)
+	withdraw, err := s.withdrawRepository.Read(withdrawID)
 
 	if err != nil {
 		s.logger.Error("failed find withdraw by id: ", zap.Error(err))
@@ -57,83 +72,103 @@ func (s *withdrawService) FindById(withdrawID int) (*models.Withdraw, error) {
 	return withdraw, nil
 }
 
-func (s *withdrawService) Create(withdraw requests.CreateWithdrawRequest) (*models.Withdraw, error) {
-	saldo, err := s.saldoRepository.ReadByUserID(withdraw.UserID)
-
+func (s *withdrawService) Create(request requests.CreateWithdrawRequest) (*models.Withdraw, error) {
+	saldo, err := s.saldoRepository.ReadByUserID(request.UserID)
 	if err != nil {
-		s.logger.Error("failed find saldo by user id: ", zap.Error(err))
-		return nil, err
+		s.logger.Error("Failed to find saldo by user ID", zap.Error(err))
+		return nil, fmt.Errorf("saldo with user ID %d not found: %w", request.UserID, err)
 	}
 
-	if saldo.TotalBalance < withdraw.WithdrawAmount {
-		return nil, fmt.Errorf("sender saldo not enough")
+	if saldo == nil {
+		s.logger.Error("Saldo not found for user ID", zap.Int("userID", request.UserID))
+		return nil, fmt.Errorf("saldo not found")
 	}
 
-	saldo.TotalBalance = saldo.TotalBalance - withdraw.WithdrawAmount
+	// Check for sufficient balance
+	if saldo.TotalBalance < request.WithdrawAmount {
+		s.logger.Error("Insufficient balance for user", zap.Int("userID", request.UserID), zap.Int("requested", request.WithdrawAmount))
+		return nil, fmt.Errorf("insufficient balance")
+	}
+	s.logger.Info("User has sufficient balance for withdrawal")
 
-	_, err = s.saldoRepository.Update(*saldo)
+	// Update the saldo balance after withdrawal
+	newTotalBalance := saldo.TotalBalance - request.WithdrawAmount
 
+	updateData := requests.UpdateSaldoWithdraw{
+		UserID:         request.UserID,
+		TotalBalance:   newTotalBalance,
+		WithdrawAmount: &request.WithdrawAmount,
+		WithdrawTime:   &request.WithdrawTime,
+	}
+
+	_, err = s.saldoRepository.UpdateSaldoWithdraw(updateData)
 	if err != nil {
-		s.logger.Error("failed update sender saldo: ", zap.Error(err))
-		return nil, err
+		s.logger.Error("Failed to update sender's saldo", zap.Error(err))
+		return nil, fmt.Errorf("failed to update sender's saldo: %w", err)
 	}
 
-	withdrawModel := models.Withdraw{
-		WithdrawTime:   withdraw.WithdrawTime,
-		WithdrawAmount: withdraw.WithdrawAmount,
-		UserID:         withdraw.UserID,
-	}
-
-	res, err := s.repository.Create(withdrawModel)
-
+	// Create the withdraw record
+	withdrawRecord, err := s.withdrawRepository.Create(request)
 	if err != nil {
-		s.logger.Error("failed create withdraw: ", zap.Error(err))
-		return nil, err
+		s.logger.Error("Failed to create withdraw record", zap.Error(err))
+		return nil, fmt.Errorf("failed to create withdraw record: %w", err)
 	}
 
-	return res, nil
+	return withdrawRecord, nil
 }
 
-func (s *withdrawService) Update(requests requests.UpdateWithdrawRequest) (*models.Withdraw, error) {
-	saldo, err := s.saldoRepository.ReadByUserID(requests.UserID)
-
+func (s *withdrawService) Update(request requests.UpdateWithdrawRequest) (*models.Withdraw, error) {
+	_, err := s.withdrawRepository.Read(request.WithdrawID)
 	if err != nil {
-		s.logger.Error("failed find saldo by user id: ", zap.Error(err))
-		return nil, err
+		s.logger.Error("Failed to find withdraw record by ID", zap.Error(err))
+		return nil, fmt.Errorf("withdraw record not found")
 	}
 
-	if saldo.TotalBalance < requests.WithdrawAmount {
-		return nil, fmt.Errorf("sender saldo not enough")
-	}
-
-	saldo.TotalBalance = saldo.TotalBalance - requests.WithdrawAmount
-
-	_, err = s.saldoRepository.Update(*saldo)
-
+	// Retrieve saldo
+	saldo, err := s.saldoRepository.ReadByUserID(request.UserID)
 	if err != nil {
-		s.logger.Error("failed update sender saldo: ", zap.Error(err))
-		return nil, err
+		s.logger.Error("Failed to find saldo by user ID", zap.Error(err))
+		return nil, fmt.Errorf("saldo not found")
 	}
 
-	withdrawModel := models.Withdraw{
-		WithdrawID:     requests.WithdrawID,
-		WithdrawTime:   requests.WithdrawTime,
-		WithdrawAmount: requests.WithdrawAmount,
-		UserID:         requests.UserID,
+	if saldo.TotalBalance < request.WithdrawAmount {
+		s.logger.Error("Insufficient balance for user", zap.Int("userID", request.UserID))
+		return nil, fmt.Errorf("insufficient balance")
 	}
 
-	res, err := s.repository.Update(withdrawModel)
+	newTotalBalance := saldo.TotalBalance - request.WithdrawAmount
+	updateData := requests.UpdateSaldoWithdraw{
+		UserID:         saldo.UserID,
+		TotalBalance:   newTotalBalance,
+		WithdrawAmount: &request.WithdrawAmount,
+		WithdrawTime:   &request.WithdrawTime,
+	}
 
+	updatedWithdraw, err := s.withdrawRepository.Update(request)
 	if err != nil {
-		s.logger.Error("failed update withdraw: ", zap.Error(err))
-		return nil, err
+		rollbackData := requests.UpdateSaldoBalance{
+			UserID:       saldo.UserID,
+			TotalBalance: saldo.TotalBalance,
+		}
+		_, rollbackErr := s.saldoRepository.UpdateBalance(rollbackData)
+		if rollbackErr != nil {
+			s.logger.Error("Failed to rollback saldo after withdraw update failure", zap.Error(rollbackErr))
+		}
+		s.logger.Error("Failed to update withdraw record", zap.Error(err))
+		return nil, fmt.Errorf("failed to update withdraw record: %w", err)
 	}
 
-	return res, nil
+	_, err = s.saldoRepository.UpdateSaldoWithdraw(updateData)
+	if err != nil {
+		s.logger.Error("Failed to update saldo balance", zap.Error(err))
+		return nil, fmt.Errorf("failed to update saldo balance: %w", err)
+	}
+
+	return updatedWithdraw, nil
 }
 
 func (s *withdrawService) Delete(withdrawID int) error {
-	err := s.repository.Delete(withdrawID)
+	err := s.withdrawRepository.Delete(withdrawID)
 
 	if err != nil {
 		s.logger.Error("failed delete withdraw: ", zap.Error(err))
