@@ -34,4 +34,6 @@ func (h *handler) InitApi(r *http.ServeMux) {
 	h.initSaldoGroup("/saldo", r)
 	h.initTopupGroup("/topup", r)
 	h.initTransferGroup("/transfer", r)
+	h.InitWithdrawGroup("/withdraw", r)
+	h.initUserGroup("/user", r)
 }

@@ -13,6 +13,7 @@ type Services struct {
 	Topup    TopupService
 	Transfer TransferService
 	Withdraw WithdrawService
+	User     UserService
 }
 
 type Deps struct {
@@ -34,5 +35,6 @@ func NewServices(deps Deps) *Services {
 			deps.Logger,
 		),
 		Withdraw: NewWithdrawService(deps.Repository.User, deps.Repository.Withdraw, deps.Repository.Saldo, deps.Logger),
+		User:     NewUserService(deps.Repository.User, deps.Logger),
 	}
 }

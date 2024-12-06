@@ -2,7 +2,9 @@ package repository
 
 import (
 	"fmt"
+	"payment-mutex/internal/domain/requests"
 	"payment-mutex/internal/models"
+	"payment-mutex/pkg/randomvcc"
 	"sync"
 )
 
@@ -19,7 +21,7 @@ func NewUserRepository() *userRepository {
 	}
 }
 
-func (ds *userRepository) ReadAll() []models.User {
+func (ds *userRepository) ReadAll() (*[]models.User, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
@@ -28,7 +30,7 @@ func (ds *userRepository) ReadAll() []models.User {
 		users = append(users, user)
 	}
 
-	return users
+	return &users, nil
 }
 
 func (ds *userRepository) Read(userID int) (*models.User, error) {
@@ -57,12 +59,29 @@ func (ds *userRepository) ReadByEmail(email string) (*models.User, error) {
 	return nil, fmt.Errorf("user with email %s not found", email)
 }
 
-func (ds *userRepository) Create(user models.User) (*models.User, error) {
+func (ds *userRepository) Create(request requests.CreateUserRequest) (*models.User, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	if _, exists := ds.users[user.UserID]; exists {
-		return nil, fmt.Errorf("user with ID %d already exists", user.UserID)
+	for _, existingUser := range ds.users {
+		if existingUser.Email == request.Email {
+			return nil, fmt.Errorf("user for email %s already exists", request.Email)
+		}
+	}
+
+	random, err := randomvcc.RandomVCC()
+
+	if err != nil {
+		return nil, fmt.Errorf("random vcc error: %d", err)
+	}
+
+	user := models.User{
+		UserID:      ds.nextID,
+		Email:       request.Email,
+		FirstName:   request.FirstName,
+		LastName:    request.LastName,
+		Password:    request.Password,
+		NocTransfer: int(random),
 	}
 
 	user.UserID = ds.nextID
@@ -72,27 +91,41 @@ func (ds *userRepository) Create(user models.User) (*models.User, error) {
 	return &user, nil
 }
 
-func (ds *userRepository) Update(userID int, newUser models.User) (*models.User, error) {
+func (ds *userRepository) Update(request requests.UpdateUserRequest) (*models.User, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
-	if _, ok := ds.users[userID]; ok {
-		newUser.UserID = userID
-		ds.users[userID] = newUser
-		return &newUser, nil
+	user, ok := ds.users[request.UserID]
+
+	if !ok {
+		return nil, fmt.Errorf("user with id %d not found", request.UserID)
 	}
 
-	return nil, fmt.Errorf("user with ID %d not found", userID)
+	random, err := randomvcc.RandomVCC()
+
+	if err != nil {
+		return nil, fmt.Errorf("random vcc error: %d", err)
+	}
+
+	user.Email = request.Email
+	user.FirstName = request.FirstName
+	user.LastName = request.LastName
+	user.Password = request.Password
+	user.NocTransfer = int(random)
+
+	ds.users[request.UserID] = user
+
+	return nil, fmt.Errorf("user with ID %d not found", request.UserID)
 }
 
-func (ds *userRepository) Delete(userID int) bool {
+func (ds *userRepository) Delete(userID int) error {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
 	if _, ok := ds.users[userID]; ok {
 		delete(ds.users, userID)
-		return true
+		return nil
 	}
 
-	return false
+	return nil
 }

@@ -10,6 +10,14 @@ type AuthService interface {
 	Login(request *requests.AuthRequest) (string, error)
 }
 
+type UserService interface {
+	FindAll() (*[]models.User, error)
+	FindByID(id int) (*models.User, error)
+	Create(request requests.CreateUserRequest) (*models.User, error)
+	Update(request requests.UpdateUserRequest) (*models.User, error)
+	Delete(userID int) error
+}
+
 type SaldoService interface {
 	FindAll() (*[]models.Saldo, error)
 	FindByUserID(userID int) (*models.Saldo, error)

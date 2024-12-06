@@ -6,12 +6,12 @@ import (
 )
 
 type UserRepository interface {
-	ReadAll() []models.User
+	ReadAll() (*[]models.User, error)
 	Read(userID int) (*models.User, error)
 	ReadByEmail(email string) (*models.User, error)
-	Create(user models.User) (*models.User, error)
-	Update(userID int, newUser models.User) (*models.User, error)
-	Delete(userID int) bool
+	Create(request requests.CreateUserRequest) (*models.User, error)
+	Update(request requests.UpdateUserRequest) (*models.User, error)
+	Delete(userID int) error
 }
 
 type SaldoRepository interface {

@@ -7,7 +7,6 @@ import (
 	"payment-mutex/pkg/auth"
 	"payment-mutex/pkg/hash"
 	"payment-mutex/pkg/logger"
-	"payment-mutex/pkg/randomvcc"
 
 	"go.uber.org/zap"
 )
@@ -28,31 +27,21 @@ func NewAuthService(hash hash.Hashing, repository repository.UserRepository, tok
 	}
 }
 
-func (s *authService) RegisterUser(requests *requests.RegisterRequest) (*models.User, error) {
-	var user models.User
-
-	hashing, err := s.hash.HashPassword(requests.Password)
+func (s *authService) RegisterUser(request *requests.RegisterRequest) (*models.User, error) {
+	hashing, err := s.hash.HashPassword(request.Password)
 
 	if err != nil {
 		s.logger.Error("Error hashing password: ", zap.Error(err))
 		return nil, err
 	}
 
-	user.FirstName = requests.FirstName
-	user.LastName = requests.LastName
-	user.Email = requests.Email
-	user.Password = hashing
-
-	random, err := randomvcc.RandomVCC()
-
-	if err != nil {
-		s.logger.Error("Error generating random number: ", zap.Error(err))
-		return nil, err
-	}
-
-	user.NocTransfer = int(random)
-
-	res, err := s.repository.Create(user)
+	res, err := s.repository.Create(requests.CreateUserRequest{
+		FirstName:       request.FirstName,
+		LastName:        request.LastName,
+		Email:           request.Email,
+		Password:        hashing,
+		ConfirmPassword: request.ConfirmPassword,
+	})
 
 	if err != nil {
 		s.logger.Error("Error creating user: ", zap.Error(err))
