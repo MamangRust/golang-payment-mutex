@@ -2,25 +2,29 @@ package repository
 
 import (
 	"fmt"
+	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
+	recordmapper "payment-mutex/internal/mapper/record"
 	"payment-mutex/internal/models"
 	"sync"
 )
 
 type saldoRepository struct {
-	mu     sync.RWMutex
-	saldos map[int]models.Saldo
-	nextID int
+	mu      sync.RWMutex
+	saldos  map[int]models.Saldo
+	nextID  int
+	mapping recordmapper.SaldoRecordMapping
 }
 
-func NewSaldoRepository() *saldoRepository {
+func NewSaldoRepository(mapping recordmapper.SaldoRecordMapping) *saldoRepository {
 	return &saldoRepository{
-		saldos: make(map[int]models.Saldo),
-		nextID: 1,
+		saldos:  make(map[int]models.Saldo),
+		nextID:  1,
+		mapping: mapping,
 	}
 }
 
-func (ds *saldoRepository) ReadAll() (*[]models.Saldo, error) {
+func (ds *saldoRepository) ReadAll() ([]*record.SaldoRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 	saldos := make([]models.Saldo, 0, len(ds.saldos))
@@ -30,31 +34,31 @@ func (ds *saldoRepository) ReadAll() (*[]models.Saldo, error) {
 	if len(saldos) == 0 {
 		return nil, fmt.Errorf("no saldo found")
 	}
-	return &saldos, nil
+	return ds.mapping.ToSaldosRecord(saldos), nil
 }
 
-func (ds *saldoRepository) Read(saldoID int) (*models.Saldo, error) {
+func (ds *saldoRepository) Read(saldoID int) (*record.SaldoRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 	saldo, ok := ds.saldos[saldoID]
 	if !ok {
 		return nil, fmt.Errorf("saldo with ID %d not found", saldoID)
 	}
-	return &saldo, nil
+	return ds.mapping.ToSaldoRecord(saldo), nil
 }
 
-func (ds *saldoRepository) ReadByUserID(userID int) (*models.Saldo, error) {
+func (ds *saldoRepository) ReadByUserID(userID int) (*record.SaldoRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 	for _, saldo := range ds.saldos {
 		if saldo.UserID == userID {
-			return &saldo, nil
+			return ds.mapping.ToSaldoRecord(saldo), nil
 		}
 	}
 	return nil, fmt.Errorf("saldo for user ID %d not found", userID)
 }
 
-func (ds *saldoRepository) ReadByUsersID(userID int) (*[]models.Saldo, error) {
+func (ds *saldoRepository) ReadByUsersID(userID int) ([]*record.SaldoRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 	var userSaldos []models.Saldo
@@ -66,10 +70,10 @@ func (ds *saldoRepository) ReadByUsersID(userID int) (*[]models.Saldo, error) {
 	if len(userSaldos) == 0 {
 		return nil, fmt.Errorf("no saldo found for user ID %d", userID)
 	}
-	return &userSaldos, nil
+	return ds.mapping.ToSaldosRecord(userSaldos), nil
 }
 
-func (ds *saldoRepository) Create(request requests.CreateSaldoRequest) (*models.Saldo, error) {
+func (ds *saldoRepository) Create(request requests.CreateSaldoRequest) (*record.SaldoRecord, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
@@ -87,10 +91,11 @@ func (ds *saldoRepository) Create(request requests.CreateSaldoRequest) (*models.
 
 	ds.saldos[saldo.SaldoID] = saldo
 	ds.nextID++
-	return &saldo, nil
+
+	return ds.mapping.ToSaldoRecord(saldo), nil
 }
 
-func (ds *saldoRepository) Update(request requests.UpdateSaldoRequest) (*models.Saldo, error) {
+func (ds *saldoRepository) Update(request requests.UpdateSaldoRequest) (*record.SaldoRecord, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
@@ -101,14 +106,20 @@ func (ds *saldoRepository) Update(request requests.UpdateSaldoRequest) (*models.
 
 	saldo.UserID = request.UserID
 	saldo.TotalBalance = request.TotalBalance
-	saldo.WithdrawAmount = request.WithdrawAmount
-	saldo.WithdrawTime = request.WithdrawTime
+
+	if request.WithdrawAmount != nil {
+		saldo.WithdrawAmount = *request.WithdrawAmount
+	}
+	if request.WithdrawTime != nil {
+		saldo.WithdrawTime = *request.WithdrawTime
+	}
 
 	ds.saldos[request.SaldoID] = saldo
-	return &saldo, nil
+
+	return ds.mapping.ToSaldoRecord(saldo), nil
 }
 
-func (ds *saldoRepository) UpdateBalance(request requests.UpdateSaldoBalance) (*models.Saldo, error) {
+func (ds *saldoRepository) UpdateBalance(request requests.UpdateSaldoBalance) (*record.SaldoRecord, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
@@ -119,14 +130,14 @@ func (ds *saldoRepository) UpdateBalance(request requests.UpdateSaldoBalance) (*
 
 			ds.saldos[id] = updatedSaldo
 
-			return &updatedSaldo, nil
+			return ds.mapping.ToSaldoRecord(saldo), nil
 		}
 	}
 
 	return nil, fmt.Errorf("saldo for user ID %d not found", request.UserID)
 }
 
-func (ds *saldoRepository) UpdateSaldoWithdraw(request requests.UpdateSaldoWithdraw) (*models.Saldo, error) {
+func (ds *saldoRepository) UpdateSaldoWithdraw(request requests.UpdateSaldoWithdraw) (*record.SaldoRecord, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
@@ -147,7 +158,7 @@ func (ds *saldoRepository) UpdateSaldoWithdraw(request requests.UpdateSaldoWithd
 
 			ds.saldos[id] = updatedSaldo
 
-			return &updatedSaldo, nil
+			return ds.mapping.ToSaldoRecord(saldo), nil
 		}
 	}
 

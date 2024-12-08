@@ -2,7 +2,9 @@ package repository
 
 import (
 	"fmt"
+	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
+	recordmapper "payment-mutex/internal/mapper/record"
 	"payment-mutex/internal/models"
 	"time"
 
@@ -13,16 +15,18 @@ type transferRepository struct {
 	mu        sync.RWMutex
 	transfers map[int]models.Transfer
 	nextID    int
+	mapping   recordmapper.TransferRecordMapping
 }
 
-func NewTransferRepository() *transferRepository {
+func NewTransferRepository(mapping recordmapper.TransferRecordMapping) *transferRepository {
 	return &transferRepository{
 		transfers: make(map[int]models.Transfer),
 		nextID:    1,
+		mapping:   mapping,
 	}
 }
 
-func (ds *transferRepository) ReadAll() (*[]models.Transfer, error) {
+func (ds *transferRepository) ReadAll() ([]*record.TransferRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
@@ -36,10 +40,10 @@ func (ds *transferRepository) ReadAll() (*[]models.Transfer, error) {
 		return nil, fmt.Errorf("no transfer found")
 	}
 
-	return &transfers, nil
+	return ds.mapping.ToTransfersRecord(transfers), nil
 }
 
-func (ds *transferRepository) Read(transferID int) (*models.Transfer, error) {
+func (ds *transferRepository) Read(transferID int) (*record.TransferRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
@@ -49,10 +53,10 @@ func (ds *transferRepository) Read(transferID int) (*models.Transfer, error) {
 		return nil, fmt.Errorf("transfer with ID %d not found", transferID)
 	}
 
-	return &transfer, nil
+	return ds.mapping.ToTransferRecord(transfer), nil
 }
 
-func (ds *transferRepository) ReadByUsersID(userID int) (*[]models.Transfer, error) {
+func (ds *transferRepository) ReadByUsersID(userID int) ([]*record.TransferRecord, error) {
 	ds.mu.RLock()
 
 	defer ds.mu.RUnlock()
@@ -69,10 +73,10 @@ func (ds *transferRepository) ReadByUsersID(userID int) (*[]models.Transfer, err
 		return nil, fmt.Errorf("not transfer not found for user id %d", userID)
 	}
 
-	return &transfers, nil
+	return ds.mapping.ToTransfersRecord(transfers), nil
 }
 
-func (ds *transferRepository) ReadByUserID(userID int) (*models.Transfer, error) {
+func (ds *transferRepository) ReadByUserID(userID int) (*record.TransferRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
@@ -82,10 +86,10 @@ func (ds *transferRepository) ReadByUserID(userID int) (*models.Transfer, error)
 		return nil, fmt.Errorf("transfer with ID %d not found", userID)
 	}
 
-	return &transfer, nil
+	return ds.mapping.ToTransferRecord(transfer), nil
 }
 
-func (ds *transferRepository) Create(request requests.CreateTransferRequest) (*models.Transfer, error) {
+func (ds *transferRepository) Create(request requests.CreateTransferRequest) (*record.TransferRecord, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
@@ -101,10 +105,10 @@ func (ds *transferRepository) Create(request requests.CreateTransferRequest) (*m
 
 	ds.nextID++
 
-	return &transfer, nil
+	return ds.mapping.ToTransferRecord(transfer), nil
 }
 
-func (ds *transferRepository) Update(request requests.UpdateTransferRequest) (*models.Transfer, error) {
+func (ds *transferRepository) Update(request requests.UpdateTransferRequest) (*record.TransferRecord, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
@@ -120,10 +124,10 @@ func (ds *transferRepository) Update(request requests.UpdateTransferRequest) (*m
 	transfer.TransferTime = time.Now()
 	ds.transfers[request.TransferID] = transfer
 
-	return &transfer, nil
+	return ds.mapping.ToTransferRecord(transfer), nil
 }
 
-func (ds *transferRepository) UpdateAmount(request requests.UpdateTransferAmountRequest) (*models.Transfer, error) {
+func (ds *transferRepository) UpdateAmount(request requests.UpdateTransferAmountRequest) (*record.TransferRecord, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
@@ -138,7 +142,7 @@ func (ds *transferRepository) UpdateAmount(request requests.UpdateTransferAmount
 
 	ds.transfers[request.TransferID] = transfer
 
-	return &transfer, nil
+	return ds.mapping.ToTransferRecord(transfer), nil
 
 }
 

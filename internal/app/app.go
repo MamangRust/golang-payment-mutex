@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"payment-mutex/internal/handler"
+	recordmapper "payment-mutex/internal/mapper/record"
 	"payment-mutex/internal/repository"
 	"payment-mutex/internal/service"
 	"payment-mutex/pkg/auth"
@@ -39,7 +40,9 @@ func Run() {
 
 	hashing := hash.NewHashingPassword()
 
-	repository := repository.NewRepositorys()
+	repository := repository.NewRepositorys(repository.Deps{
+		MapperRecord: *recordmapper.NewRecordMapper(),
+	})
 
 	token, err := auth.NewManager(viper.GetString("JWT_SECRET"))
 

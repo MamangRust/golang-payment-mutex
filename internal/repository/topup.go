@@ -2,7 +2,9 @@ package repository
 
 import (
 	"fmt"
+	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
+	recordmapper "payment-mutex/internal/mapper/record"
 	"payment-mutex/internal/models"
 	"time"
 
@@ -10,19 +12,21 @@ import (
 )
 
 type topupRepository struct {
-	mu     sync.RWMutex
-	topups map[int]models.Topup
-	nextID int
+	mu      sync.RWMutex
+	topups  map[int]models.Topup
+	nextID  int
+	mapping recordmapper.TopupRecordMapping
 }
 
-func NewTopupRepository() *topupRepository {
+func NewTopupRepository(mapping recordmapper.TopupRecordMapping) *topupRepository {
 	return &topupRepository{
-		topups: make(map[int]models.Topup),
-		nextID: 1,
+		topups:  make(map[int]models.Topup),
+		nextID:  1,
+		mapping: mapping,
 	}
 }
 
-func (ds *topupRepository) ReadAll() (*[]models.Topup, error) {
+func (ds *topupRepository) ReadAll() ([]*record.TopupRecord, error) {
 	ds.mu.RLock()
 
 	defer ds.mu.RUnlock()
@@ -37,10 +41,10 @@ func (ds *topupRepository) ReadAll() (*[]models.Topup, error) {
 		return nil, fmt.Errorf("no topup found")
 	}
 
-	return &topups, nil
+	return ds.mapping.ToTopupRecords(topups), nil
 
 }
-func (ds *topupRepository) Read(topupID int) (*models.Topup, error) {
+func (ds *topupRepository) Read(topupID int) (*record.TopupRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
@@ -50,10 +54,10 @@ func (ds *topupRepository) Read(topupID int) (*models.Topup, error) {
 		return nil, fmt.Errorf("topup with ID %d not found", topupID)
 	}
 
-	return &topup, nil
+	return ds.mapping.ToTopupRecord(topup), nil
 }
 
-func (ds *topupRepository) ReadByUserID(userID int) (*models.Topup, error) {
+func (ds *topupRepository) ReadByUserID(userID int) (*record.TopupRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
@@ -63,10 +67,10 @@ func (ds *topupRepository) ReadByUserID(userID int) (*models.Topup, error) {
 		return nil, fmt.Errorf("topup with ID %d not found", userID)
 	}
 
-	return &topup, nil
+	return ds.mapping.ToTopupRecord(topup), nil
 }
 
-func (ds *topupRepository) ReadByUsersID(userID int) (*[]models.Topup, error) {
+func (ds *topupRepository) ReadByUsersID(userID int) ([]*record.TopupRecord, error) {
 	ds.mu.RLock()
 
 	defer ds.mu.RUnlock()
@@ -83,10 +87,10 @@ func (ds *topupRepository) ReadByUsersID(userID int) (*[]models.Topup, error) {
 		return nil, fmt.Errorf("no topups not found for user ID %d", userID)
 	}
 
-	return &topups, nil
+	return ds.mapping.ToTopupRecords(topups), nil
 }
 
-func (ds *topupRepository) Create(request requests.CreateTopupRequest) (*models.Topup, error) {
+func (ds *topupRepository) Create(request requests.CreateTopupRequest) (*record.TopupRecord, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
@@ -103,10 +107,10 @@ func (ds *topupRepository) Create(request requests.CreateTopupRequest) (*models.
 
 	ds.nextID++
 
-	return &topup, nil
+	return ds.mapping.ToTopupRecord(topup), nil
 }
 
-func (ds *topupRepository) Update(request requests.UpdateTopupRequest) (*models.Topup, error) {
+func (ds *topupRepository) Update(request requests.UpdateTopupRequest) (*record.TopupRecord, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
@@ -123,10 +127,10 @@ func (ds *topupRepository) Update(request requests.UpdateTopupRequest) (*models.
 	topup.TopupTime = time.Now()
 	ds.topups[request.TopupID] = topup
 
-	return &topup, nil
+	return ds.mapping.ToTopupRecord(topup), nil
 }
 
-func (ds *topupRepository) UpdateAmount(request requests.UpdateTopupAmount) (*models.Topup, error) {
+func (ds *topupRepository) UpdateAmount(request requests.UpdateTopupAmount) (*record.TopupRecord, error) {
 	ds.mu.Lock()
 
 	defer ds.mu.Unlock()
@@ -141,7 +145,7 @@ func (ds *topupRepository) UpdateAmount(request requests.UpdateTopupAmount) (*mo
 
 	ds.topups[request.TopupID] = topup
 
-	return &topup, nil
+	return ds.mapping.ToTopupRecord(topup), nil
 }
 
 func (ds *topupRepository) Delete(topupID int) error {

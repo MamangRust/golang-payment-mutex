@@ -1,9 +1,9 @@
 package service
 
 import (
-	"fmt"
+	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
-	"payment-mutex/internal/models"
+	"payment-mutex/internal/domain/response"
 	"payment-mutex/internal/repository"
 	"payment-mutex/pkg/logger"
 
@@ -28,72 +28,104 @@ func NewWithdrawService(
 	}
 }
 
-func (s *withdrawService) FindAll() (*[]models.Withdraw, error) {
-	withdraw, err := s.withdrawRepository.ReadAll()
-
+func (s *withdrawService) FindAll() (*response.ApiResponse[[]*record.WithdrawRecord], *response.ErrorResponse) {
+	withdraws, err := s.withdrawRepository.ReadAll()
 	if err != nil {
-		s.logger.Error("failed find all withdraw: ", zap.Error(err))
-		return nil, err
+		s.logger.Error("failed to find all withdraws", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch all withdraw records.",
+		}
 	}
 
-	return withdraw, nil
+	return &response.ApiResponse[[]*record.WithdrawRecord]{
+		Status:  "success",
+		Message: "Successfully retrieved all withdraw records.",
+		Data:    withdraws,
+	}, nil
 }
 
-func (s *withdrawService) FindByUserID(userID int) (*models.Withdraw, error) {
-	withdraw, err := s.withdrawRepository.ReadByUserID(userID)
-
-	if err != nil {
-		s.logger.Error("failed find withdraw by user id: ", zap.Error(err))
-		return nil, err
-	}
-
-	return withdraw, nil
-}
-
-func (s *withdrawService) FindByUsersID(userID int) (*[]models.Withdraw, error) {
-	withdraw, err := s.withdrawRepository.ReadByUsersID(userID)
-
-	if err != nil {
-		s.logger.Error("failed find withdraw by users id: ", zap.Error(err))
-		return nil, err
-	}
-
-	return withdraw, nil
-}
-
-func (s *withdrawService) FindById(withdrawID int) (*models.Withdraw, error) {
+func (s *withdrawService) FindById(withdrawID int) (*response.ApiResponse[*record.WithdrawRecord], *response.ErrorResponse) {
 	withdraw, err := s.withdrawRepository.Read(withdrawID)
-
 	if err != nil {
-		s.logger.Error("failed find withdraw by id: ", zap.Error(err))
-		return nil, err
+		s.logger.Error("failed to find withdraw by id", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch withdraw record by ID.",
+		}
 	}
 
-	return withdraw, nil
+	return &response.ApiResponse[*record.WithdrawRecord]{
+		Status:  "success",
+		Message: "Successfully retrieved withdraw record by ID.",
+		Data:    withdraw,
+	}, nil
 }
 
-func (s *withdrawService) Create(request requests.CreateWithdrawRequest) (*models.Withdraw, error) {
+func (s *withdrawService) FindByUserID(userID int) (*response.ApiResponse[*record.WithdrawRecord], *response.ErrorResponse) {
+	withdraw, err := s.withdrawRepository.ReadByUserID(userID)
+	if err != nil {
+		s.logger.Error("failed to find withdraw by user id", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch withdraw record for user.",
+		}
+	}
+
+	return &response.ApiResponse[*record.WithdrawRecord]{
+		Status:  "success",
+		Message: "Successfully retrieved withdraw record for user.",
+		Data:    withdraw,
+	}, nil
+}
+
+func (s *withdrawService) FindByUsersID(userID int) (*response.ApiResponse[[]*record.WithdrawRecord], *response.ErrorResponse) {
+	withdraws, err := s.withdrawRepository.ReadByUsersID(userID)
+	if err != nil {
+		s.logger.Error("failed to find withdraws by users id", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch withdraw records for users.",
+		}
+	}
+
+	return &response.ApiResponse[[]*record.WithdrawRecord]{
+		Status:  "success",
+		Message: "Successfully retrieved withdraw records for users.",
+		Data:    withdraws,
+	}, nil
+}
+
+func (s *withdrawService) Create(request requests.CreateWithdrawRequest) (*response.ApiResponse[*record.WithdrawRecord], *response.ErrorResponse) {
+	// Cek saldo pengguna
 	saldo, err := s.saldoRepository.ReadByUserID(request.UserID)
 	if err != nil {
 		s.logger.Error("Failed to find saldo by user ID", zap.Error(err))
-		return nil, fmt.Errorf("saldo with user ID %d not found: %w", request.UserID, err)
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch saldo for the user.",
+		}
 	}
 
 	if saldo == nil {
-		s.logger.Error("Saldo not found for user ID", zap.Int("userID", request.UserID))
-		return nil, fmt.Errorf("saldo not found")
+		s.logger.Error("Saldo not found for user", zap.Int("userID", request.UserID))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Saldo not found for the specified user ID.",
+		}
 	}
 
-	// Check for sufficient balance
+	// Periksa saldo mencukupi
 	if saldo.TotalBalance < request.WithdrawAmount {
 		s.logger.Error("Insufficient balance for user", zap.Int("userID", request.UserID), zap.Int("requested", request.WithdrawAmount))
-		return nil, fmt.Errorf("insufficient balance")
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Insufficient balance for withdrawal.",
+		}
 	}
-	s.logger.Info("User has sufficient balance for withdrawal")
 
-	// Update the saldo balance after withdrawal
+	// Update saldo setelah penarikan
 	newTotalBalance := saldo.TotalBalance - request.WithdrawAmount
-
 	updateData := requests.UpdateSaldoWithdraw{
 		UserID:         request.UserID,
 		TotalBalance:   newTotalBalance,
@@ -103,45 +135,74 @@ func (s *withdrawService) Create(request requests.CreateWithdrawRequest) (*model
 
 	_, err = s.saldoRepository.UpdateSaldoWithdraw(updateData)
 	if err != nil {
-		s.logger.Error("Failed to update sender's saldo", zap.Error(err))
-		return nil, fmt.Errorf("failed to update sender's saldo: %w", err)
+		s.logger.Error("Failed to update saldo after withdrawal", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to update saldo after withdrawal.",
+		}
 	}
 
-	// Create the withdraw record
+	// Buat catatan withdraw
 	withdrawRecord, err := s.withdrawRepository.Create(request)
 	if err != nil {
 		s.logger.Error("Failed to create withdraw record", zap.Error(err))
-		return nil, fmt.Errorf("failed to create withdraw record: %w", err)
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to create withdraw record.",
+		}
 	}
 
-	return withdrawRecord, nil
+	return &response.ApiResponse[*record.WithdrawRecord]{
+		Status:  "success",
+		Message: "Withdrawal created successfully.",
+		Data:    withdrawRecord,
+	}, nil
 }
 
-func (s *withdrawService) Update(request requests.UpdateWithdrawRequest) (*models.Withdraw, error) {
+func (s *withdrawService) Update(request requests.UpdateWithdrawRequest) (*response.ApiResponse[*record.WithdrawRecord], *response.ErrorResponse) {
 	_, err := s.withdrawRepository.Read(request.WithdrawID)
 	if err != nil {
 		s.logger.Error("Failed to find withdraw record by ID", zap.Error(err))
-		return nil, fmt.Errorf("withdraw record not found")
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Withdraw record not found.",
+		}
 	}
 
-	// Retrieve saldo
+	// Ambil saldo pengguna
 	saldo, err := s.saldoRepository.ReadByUserID(request.UserID)
 	if err != nil {
-		s.logger.Error("Failed to find saldo by user ID", zap.Error(err))
-		return nil, fmt.Errorf("saldo not found")
+		s.logger.Error("Failed to fetch saldo by user ID", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch saldo for the user.",
+		}
 	}
 
 	if saldo.TotalBalance < request.WithdrawAmount {
 		s.logger.Error("Insufficient balance for user", zap.Int("userID", request.UserID))
-		return nil, fmt.Errorf("insufficient balance")
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Insufficient balance for withdrawal update.",
+		}
 	}
 
+	// Update saldo baru
 	newTotalBalance := saldo.TotalBalance - request.WithdrawAmount
-	updateData := requests.UpdateSaldoWithdraw{
+	updateSaldoData := requests.UpdateSaldoWithdraw{
 		UserID:         saldo.UserID,
 		TotalBalance:   newTotalBalance,
 		WithdrawAmount: &request.WithdrawAmount,
 		WithdrawTime:   &request.WithdrawTime,
+	}
+
+	_, err = s.saldoRepository.UpdateSaldoWithdraw(updateSaldoData)
+	if err != nil {
+		s.logger.Error("Failed to update saldo balance", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to update saldo balance.",
+		}
 	}
 
 	updatedWithdraw, err := s.withdrawRepository.Update(request)
@@ -155,25 +216,32 @@ func (s *withdrawService) Update(request requests.UpdateWithdrawRequest) (*model
 			s.logger.Error("Failed to rollback saldo after withdraw update failure", zap.Error(rollbackErr))
 		}
 		s.logger.Error("Failed to update withdraw record", zap.Error(err))
-		return nil, fmt.Errorf("failed to update withdraw record: %w", err)
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to update withdraw record.",
+		}
 	}
 
-	_, err = s.saldoRepository.UpdateSaldoWithdraw(updateData)
-	if err != nil {
-		s.logger.Error("Failed to update saldo balance", zap.Error(err))
-		return nil, fmt.Errorf("failed to update saldo balance: %w", err)
-	}
-
-	return updatedWithdraw, nil
+	return &response.ApiResponse[*record.WithdrawRecord]{
+		Status:  "success",
+		Message: "Withdraw record updated successfully.",
+		Data:    updatedWithdraw,
+	}, nil
 }
 
-func (s *withdrawService) Delete(withdrawID int) error {
+func (s *withdrawService) Delete(withdrawID int) (*response.ApiResponse[string], *response.ErrorResponse) {
 	err := s.withdrawRepository.Delete(withdrawID)
-
 	if err != nil {
-		s.logger.Error("failed delete withdraw: ", zap.Error(err))
-		return err
+		s.logger.Error("Failed to delete withdraw record", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to delete withdraw record.",
+		}
 	}
 
-	return nil
+	return &response.ApiResponse[string]{
+		Status:  "success",
+		Message: "Withdraw record deleted successfully.",
+		Data:    "Record deleted",
+	}, nil
 }

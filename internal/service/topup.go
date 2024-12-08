@@ -1,11 +1,13 @@
 package service
 
 import (
-	"errors"
+	"fmt"
+	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
-	"payment-mutex/internal/models"
+	"payment-mutex/internal/domain/response"
 	"payment-mutex/internal/repository"
 	"payment-mutex/pkg/logger"
+	"strconv"
 
 	"go.uber.org/zap"
 )
@@ -14,13 +16,14 @@ type topupService struct {
 	userRepository  repository.UserRepository
 	topupRepository repository.TopupRepository
 	saldoRepository repository.SaldoRepository
-
-	logger logger.Logger
+	logger          logger.Logger
 }
 
 func NewTopupService(
 	userRepository repository.UserRepository,
-	topupRepository repository.TopupRepository, saldoRepository repository.SaldoRepository, logger logger.Logger) *topupService {
+	topupRepository repository.TopupRepository,
+	saldoRepository repository.SaldoRepository,
+	logger logger.Logger) *topupService {
 	return &topupService{
 		userRepository:  userRepository,
 		topupRepository: topupRepository,
@@ -29,86 +32,111 @@ func NewTopupService(
 	}
 }
 
-func (s *topupService) FindAll() (*[]models.Topup, error) {
+func (s *topupService) FindAll() (*response.ApiResponse[[]*record.TopupRecord], *response.ErrorResponse) {
 	topup, err := s.topupRepository.ReadAll()
-
 	if err != nil {
-		s.logger.Error("failed find all topup: ", zap.Error(err))
-		return nil, err
+		s.logger.Error("failed to find all topups", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch all topup records",
+		}
 	}
 
-	return topup, nil
+	return &response.ApiResponse[[]*record.TopupRecord]{
+		Status:  "success",
+		Message: "Successfully fetched all topup records",
+		Data:    topup,
+	}, nil
 }
 
-func (s *topupService) FindById(topupID int) (*models.Topup, error) {
+func (s *topupService) FindById(topupID int) (*response.ApiResponse[*record.TopupRecord], *response.ErrorResponse) {
 	topup, err := s.topupRepository.Read(topupID)
-
 	if err != nil {
-		s.logger.Error("failed find topup by id: ", zap.Error(err))
-		return nil, err
+		s.logger.Error("failed to find topup by id", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Topup record not found",
+		}
 	}
 
-	return topup, nil
+	return &response.ApiResponse[*record.TopupRecord]{
+		Status:  "success",
+		Message: "Successfully fetched topup record",
+		Data:    topup,
+	}, nil
 }
 
-func (s *topupService) FindByUserID(userID int) (*models.Topup, error) {
-	_, err := s.userRepository.Read(userID)
-
+func (s *topupService) FindByUserID(userID int) (*response.ApiResponse[*record.TopupRecord], *response.ErrorResponse) {
+	res, err := s.topupRepository.ReadByUserID(userID)
 	if err != nil {
-		s.logger.Error("failed find user id: ", zap.Error(err))
+		s.logger.Error("Failed to find top-up record by user ID", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to retrieve top-up record for the specified user.",
+		}
 	}
 
-	topup, err := s.topupRepository.ReadByUserID(userID)
-
-	if err != nil {
-		s.logger.Error("failed find topup by user id: ", zap.Error(err))
-		return nil, err
-	}
-
-	return topup, nil
+	return &response.ApiResponse[*record.TopupRecord]{
+		Status:  "success",
+		Message: "Successfully retrieved top-up record for the user.",
+		Data:    res,
+	}, nil
 }
 
-func (s *topupService) FindByUsersID(userID int) (*[]models.Topup, error) {
+func (s *topupService) FindByUsersID(userID int) (*response.ApiResponse[[]*record.TopupRecord], *response.ErrorResponse) {
 	_, err := s.userRepository.Read(userID)
-
 	if err != nil {
-		s.logger.Error("failed find user id: ", zap.Error(err))
+		s.logger.Error("failed to find user by id", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "User not found",
+		}
 	}
 
 	topup, err := s.topupRepository.ReadByUsersID(userID)
-
 	if err != nil {
-		s.logger.Error("failed find topup by user id: ", zap.Error(err))
-
-		return nil, err
+		s.logger.Error("failed to find topup by user id", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "No topup records found for the given user",
+		}
 	}
 
-	return topup, nil
+	return &response.ApiResponse[[]*record.TopupRecord]{
+		Status:  "success",
+		Message: "Successfully fetched topup records for user",
+		Data:    topup,
+	}, nil
 }
 
-func (s *topupService) Create(request requests.CreateTopupRequest) (*models.Topup, error) {
-	// Find user
+func (s *topupService) Create(request requests.CreateTopupRequest) (*response.ApiResponse[*record.TopupRecord], *response.ErrorResponse) {
 	_, err := s.userRepository.Read(request.UserID)
 	if err != nil {
-		s.logger.Error("Failed to find user by ID", zap.Error(err))
-		return nil, errors.New("user not found")
+		s.logger.Error("failed to find user by id", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "User not found",
+		}
 	}
 
 	// Create topup
 	topup, err := s.topupRepository.Create(request)
 	if err != nil {
-		s.logger.Error("Failed to create topup", zap.Error(err))
-		return nil, err
+		s.logger.Error("failed to create topup", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to create topup record",
+		}
 	}
 
 	// Find current saldo
 	saldo, err := s.saldoRepository.ReadByUserID(request.UserID)
 	if err != nil {
-		s.logger.Error("Failed to find saldo by user ID", zap.Error(err))
-		if rollbackErr := s.topupRepository.Delete(topup.TopupID); rollbackErr != nil {
-			s.logger.Error("Failed to rollback topup creation", zap.Error(rollbackErr))
+		s.logger.Error("failed to find saldo by user id", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch user's saldo",
 		}
-		return nil, err
 	}
 
 	newBalance := saldo.TotalBalance + request.TopupAmount
@@ -117,28 +145,39 @@ func (s *topupService) Create(request requests.CreateTopupRequest) (*models.Topu
 		TotalBalance: newBalance,
 	})
 	if err != nil {
-		s.logger.Error("Failed to update saldo balance", zap.Error(err))
-		if rollbackErr := s.topupRepository.Delete(topup.TopupID); rollbackErr != nil {
-			s.logger.Error("Failed to rollback topup creation", zap.Error(rollbackErr))
+		s.logger.Error("failed to update saldo balance", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to update saldo balance",
 		}
-		return nil, err
 	}
 
-	return topup, nil
+	return &response.ApiResponse[*record.TopupRecord]{
+		Status:  "success",
+		Message: "Topup record created successfully",
+		Data:    topup,
+	}, nil
 }
 
-func (s *topupService) Update(request requests.UpdateTopupRequest) (*models.Topup, error) {
+func (s *topupService) Update(request requests.UpdateTopupRequest) (*response.ApiResponse[*record.TopupRecord], *response.ErrorResponse) {
+	// Check if the user exists
 	_, err := s.userRepository.Read(request.UserID)
 	if err != nil {
 		s.logger.Error("Failed to find user by ID", zap.Error(err))
-		return nil, errors.New("user not found")
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "User not found",
+		}
 	}
 
 	// Find the existing topup
 	existingTopup, err := s.topupRepository.Read(request.TopupID)
 	if err != nil || existingTopup == nil {
 		s.logger.Error("Failed to find topup by ID", zap.Error(err))
-		return nil, errors.New("topup not found")
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Topup not found",
+		}
 	}
 
 	topupDifference := request.TopupAmount - existingTopup.TopupAmount
@@ -150,19 +189,28 @@ func (s *topupService) Update(request requests.UpdateTopupRequest) (*models.Topu
 	})
 	if err != nil {
 		s.logger.Error("Failed to update topup amount", zap.Error(err))
-		return nil, err
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: fmt.Sprintf("Failed to update topup amount: %v", err),
+		}
 	}
 
 	// Retrieve the current balance from saldo
 	currentSaldo, err := s.saldoRepository.ReadByUserID(request.UserID)
 	if err != nil {
 		s.logger.Error("Failed to retrieve current saldo", zap.Error(err))
-		return nil, err
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: fmt.Sprintf("Failed to retrieve current saldo: %v", err),
+		}
 	}
 
 	if currentSaldo == nil {
 		s.logger.Error("No saldo found for user", zap.Int("userID", request.UserID))
-		return nil, errors.New("saldo not found")
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Saldo not found",
+		}
 	}
 
 	newBalance := currentSaldo.TotalBalance + topupDifference
@@ -184,25 +232,42 @@ func (s *topupService) Update(request requests.UpdateTopupRequest) (*models.Topu
 			s.logger.Error("Failed to rollback topup update", zap.Error(rollbackErr))
 		}
 
-		return nil, err
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: fmt.Sprintf("Failed to update saldo balance: %v", err),
+		}
 	}
 
+	// Retrieve and return the updated topup
 	updatedTopup, err := s.topupRepository.Read(request.TopupID)
 	if err != nil || updatedTopup == nil {
 		s.logger.Error("Failed to find updated topup by ID", zap.Error(err))
-		return nil, errors.New("updated topup not found")
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Updated topup not found",
+		}
 	}
 
-	return updatedTopup, nil
+	return &response.ApiResponse[*record.TopupRecord]{
+		Status:  "success",
+		Message: "Topup successfully updated",
+		Data:    updatedTopup,
+	}, nil
 }
 
-func (s *topupService) Delete(topupID int) error {
+func (s *topupService) Delete(topupID int) (*response.ApiResponse[string], *response.ErrorResponse) {
 	err := s.topupRepository.Delete(topupID)
-
 	if err != nil {
-		s.logger.Error("failed delete topup: ", zap.Error(err))
-		return err
+		s.logger.Error("failed to delete topup", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to delete topup record",
+		}
 	}
 
-	return nil
+	return &response.ApiResponse[string]{
+		Status:  "success",
+		Message: "Topup record deleted successfully",
+		Data:    "Topup record with ID " + strconv.Itoa(topupID) + " has been deleted",
+	}, nil
 }

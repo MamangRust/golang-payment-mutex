@@ -14,6 +14,7 @@ func (h *handler) initTopupGroup(prefix string, router *http.ServeMux) {
 	router.Handle(prefix+"/find_all", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.FindAllTopup)))
 	router.Handle(prefix+"/find_by_id", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.FindByIdTopup)))
 	router.Handle(prefix+"/find_by_user_id", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.FindByUserIdTopup)))
+	router.Handle(prefix+"/find_by_users_id", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.FindByUsersIdTopup)))
 	router.Handle(prefix+"/create", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.CreateTopup)))
 	router.Handle(prefix+"/update", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.UpdateTopup)))
 	router.Handle(prefix+"/delete", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.DeleteTopup)))
@@ -21,46 +22,68 @@ func (h *handler) initTopupGroup(prefix string, router *http.ServeMux) {
 
 func (h *handler) FindAllTopup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Method Not Allowed",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
 	res, err := h.services.Topup.FindAll()
 
 	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error find all topup")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error find all topup",
+		}
+
+		response.ResponseError(w, res)
 		return
 	}
 
-	response.ResponseMessage(w, "Success find all topup", res, http.StatusOK)
+	response.ResponseMessage(w, *res)
 }
 
 func (h *handler) FindByIdTopup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Method Not Allowed",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 
 	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error convert id")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error convert id",
+		}
+
+		response.ResponseError(w, res)
 		return
 	}
 
-	res, err := h.services.Topup.FindById(id)
+	res, errRes := h.services.Topup.FindById(id)
 
 	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error find topup by id")
+		response.ResponseError(w, *errRes)
 		return
 	}
 
-	response.ResponseMessage(w, "Success find topup by id", res, http.StatusOK)
+	response.ResponseMessage(w, *res)
 }
 
-func (h *handler) FindByUserIdTopup(w http.ResponseWriter, r *http.Request) {
+func (h *handler) FindByUsersIdTopup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Method Not Allowed",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
@@ -69,18 +92,55 @@ func (h *handler) FindByUserIdTopup(w http.ResponseWriter, r *http.Request) {
 	userInt, err := strconv.Atoi(userId)
 
 	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error convert user id")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error convert id",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
-	res, err := h.services.Topup.FindByUserID(userInt)
+	res, errRes := h.services.Topup.FindByUsersID(userInt)
 
 	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error find topup by user id")
+		response.ResponseError(w, *errRes)
 		return
 	}
 
-	response.ResponseMessage(w, "Success find topup by user id", res, http.StatusOK)
+	response.ResponseMessage(w, *res)
+}
+
+func (h *handler) FindByUserIdTopup(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Method Not Allowed",
+		}
+		response.ResponseError(w, res)
+		return
+	}
+
+	userId := auth.GetContextUserId(r)
+
+	userInt, err := strconv.Atoi(userId)
+
+	if err != nil {
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error convert id",
+		}
+		response.ResponseError(w, res)
+		return
+	}
+
+	res, errRes := h.services.Topup.FindByUserID(userInt)
+
+	if err != nil {
+		response.ResponseError(w, *errRes)
+		return
+	}
+
+	response.ResponseMessage(w, *res)
 }
 
 func (h *handler) CreateTopup(w http.ResponseWriter, r *http.Request) {
@@ -94,7 +154,11 @@ func (h *handler) CreateTopup(w http.ResponseWriter, r *http.Request) {
 	userInt, err := strconv.Atoi(userId)
 
 	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error convert user id")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error convert id",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
@@ -103,35 +167,53 @@ func (h *handler) CreateTopup(w http.ResponseWriter, r *http.Request) {
 	createTopup.UserID = userInt
 
 	if err := json.NewDecoder(r.Body).Decode(&createTopup); err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error invalid request")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error invalid request",
+		}
+
+		response.ResponseError(w, res)
 
 	}
 
 	if err := createTopup.Validate(); err != nil {
-		response.ResponseError(w, http.StatusBadRequest, "Error invalid validate request")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error invalid validate request",
+		}
+
+		response.ResponseError(w, res)
 		return
 	}
 
-	res, err := h.services.Topup.Create(createTopup)
+	res, errRes := h.services.Topup.Create(createTopup)
 
 	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error create topup")
+		response.ResponseError(w, *errRes)
 		return
 	}
 
-	response.ResponseMessage(w, "Success create topup", res, http.StatusCreated)
+	response.ResponseMessage(w, *res)
 }
 
 func (h *handler) UpdateTopup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Method Not Allowed",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 
 	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error convert id")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error convert id",
+		}
+		response.ResponseError(w, res)
 	}
 
 	userId := auth.GetContextUserId(r)
@@ -139,7 +221,11 @@ func (h *handler) UpdateTopup(w http.ResponseWriter, r *http.Request) {
 	userInt, err := strconv.Atoi(userId)
 
 	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error convert user id")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error convert user id",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
@@ -149,42 +235,60 @@ func (h *handler) UpdateTopup(w http.ResponseWriter, r *http.Request) {
 	updateTopup.UserID = userInt
 
 	if err := json.NewDecoder(r.Body).Decode(&updateTopup); err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error invalid request")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error invalid request",
+		}
+		response.ResponseError(w, res)
+		return
 	}
 
 	if err := updateTopup.Validate(); err != nil {
-		response.ResponseError(w, http.StatusBadRequest, "Error invalid validate request")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error invalid validate request",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
-	res, err := h.services.Topup.Update(updateTopup)
+	res, errRes := h.services.Topup.Update(updateTopup)
 
 	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error update topup")
+		response.ResponseError(w, *errRes)
 		return
 	}
 
-	response.ResponseMessage(w, "Success update topup", res, http.StatusOK)
+	response.ResponseMessage(w, *res)
 }
 
 func (h *handler) DeleteTopup(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Method Not Allowed",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 
 	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error convert id")
-	}
-
-	err = h.services.Topup.Delete(id)
-
-	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error delete topup")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Invalid ID format",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
-	response.ResponseMessage(w, "Success delete topup", nil, http.StatusOK)
+	res, errRes := h.services.Topup.Delete(id)
+
+	if err != nil {
+		response.ResponseError(w, *errRes)
+		return
+	}
+
+	response.ResponseMessage(w, *res)
 }

@@ -11,7 +11,12 @@ func MiddlewareAuth(next http.Handler) http.Handler {
 		token, err := auth.Authorization(r)
 
 		if err != nil {
-			response.ResponseError(w, http.StatusUnauthorized, "unauthorized")
+			res := response.ErrorResponse{
+				Status:  "error",
+				Message: "Unauthorized",
+			}
+
+			response.ResponseError(w, res)
 			return
 		}
 

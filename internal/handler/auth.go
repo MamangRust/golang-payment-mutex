@@ -15,57 +15,84 @@ func (h *handler) initAuthGroup(prefix string, router *http.ServeMux) {
 
 func (h *handler) login(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Method Not Allowed",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
 	var login requests.AuthRequest
-
 	if err := json.NewDecoder(r.Body).Decode(&login); err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error invalid request")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error invalid request",
+		}
+		response.ResponseError(w, res)
+		return
 	}
 
 	if err := login.Validate(); err != nil {
-		response.ResponseError(w, http.StatusBadRequest, "Error invalid validate request")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error invalid validate request",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
 	res, err := h.services.Auth.Login(&login)
-
 	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error login user")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error login user",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
-	response.ResponseToken(w, "Success login", res, http.StatusOK)
-
+	response.ResponseMessage(w, *res)
 }
 
 func (h *handler) register(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		response.ResponseError(w, http.StatusInternalServerError, "Error invalid request")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Method Not Allowed",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
 	var register requests.RegisterRequest
-
 	if err := json.NewDecoder(r.Body).Decode(&register); err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error invalid request")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error invalid request",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
 	if err := register.Validate(); err != nil {
-		response.ResponseError(w, http.StatusBadRequest, "Error invalid validate request")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error invalid validate request",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
 	res, err := h.services.Auth.RegisterUser(&register)
-
 	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error create user")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error creating user",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
-	response.ResponseMessage(w, "Success create user", res, http.StatusCreated)
-
+	response.ResponseMessage(w, *res)
 }

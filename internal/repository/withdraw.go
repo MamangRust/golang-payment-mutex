@@ -2,7 +2,9 @@ package repository
 
 import (
 	"fmt"
+	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
+	recordmapper "payment-mutex/internal/mapper/record"
 	"payment-mutex/internal/models"
 	"sync"
 )
@@ -11,16 +13,18 @@ type withdrawRepository struct {
 	mu       sync.RWMutex
 	withdraw map[int]models.Withdraw
 	nextID   int
+	mapping  recordmapper.WithdrawRecordMapping
 }
 
-func NewWithdrawRepository() *withdrawRepository {
+func NewWithdrawRepository(mapping recordmapper.WithdrawRecordMapping) *withdrawRepository {
 	return &withdrawRepository{
 		withdraw: make(map[int]models.Withdraw),
 		nextID:   1,
+		mapping:  mapping,
 	}
 }
 
-func (ds *withdrawRepository) ReadAll() (*[]models.Withdraw, error) {
+func (ds *withdrawRepository) ReadAll() ([]*record.WithdrawRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
@@ -33,11 +37,11 @@ func (ds *withdrawRepository) ReadAll() (*[]models.Withdraw, error) {
 		return nil, fmt.Errorf("no withdraw found")
 	}
 
-	return &withdraws, nil
+	return ds.mapping.ToWithdrawsRecord(withdraws), nil
 
 }
 
-func (ds *withdrawRepository) Read(withdrawID int) (*models.Withdraw, error) {
+func (ds *withdrawRepository) Read(withdrawID int) (*record.WithdrawRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
@@ -47,10 +51,10 @@ func (ds *withdrawRepository) Read(withdrawID int) (*models.Withdraw, error) {
 		return nil, fmt.Errorf("withdraw with ID %d not found", withdrawID)
 	}
 
-	return &withdraw, nil
+	return ds.mapping.ToWithdrawRecord(withdraw), nil
 }
 
-func (ds *withdrawRepository) ReadByUserID(userID int) (*models.Withdraw, error) {
+func (ds *withdrawRepository) ReadByUserID(userID int) (*record.WithdrawRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
@@ -60,10 +64,10 @@ func (ds *withdrawRepository) ReadByUserID(userID int) (*models.Withdraw, error)
 		return nil, fmt.Errorf("withdraw with ID %d not found", userID)
 	}
 
-	return &withdraw, nil
+	return ds.mapping.ToWithdrawRecord(withdraw), nil
 }
 
-func (ds *withdrawRepository) ReadByUsersID(userID int) (*[]models.Withdraw, error) {
+func (ds *withdrawRepository) ReadByUsersID(userID int) ([]*record.WithdrawRecord, error) {
 	ds.mu.RLock()
 
 	defer ds.mu.RUnlock()
@@ -80,10 +84,10 @@ func (ds *withdrawRepository) ReadByUsersID(userID int) (*[]models.Withdraw, err
 		return nil, fmt.Errorf("no withdraws not found for user ID %d", userID)
 	}
 
-	return &withdraws, nil
+	return ds.mapping.ToWithdrawsRecord(withdraws), nil
 }
 
-func (ds *withdrawRepository) Create(request requests.CreateWithdrawRequest) (*models.Withdraw, error) {
+func (ds *withdrawRepository) Create(request requests.CreateWithdrawRequest) (*record.WithdrawRecord, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
@@ -99,10 +103,10 @@ func (ds *withdrawRepository) Create(request requests.CreateWithdrawRequest) (*m
 
 	ds.nextID++
 
-	return &withdraw, nil
+	return ds.mapping.ToWithdrawRecord(withdraw), nil
 }
 
-func (ds *withdrawRepository) Update(request requests.UpdateWithdrawRequest) (*models.Withdraw, error) {
+func (ds *withdrawRepository) Update(request requests.UpdateWithdrawRequest) (*record.WithdrawRecord, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
@@ -118,7 +122,7 @@ func (ds *withdrawRepository) Update(request requests.UpdateWithdrawRequest) (*m
 
 	ds.withdraw[request.WithdrawID] = withdraw
 
-	return &withdraw, nil
+	return ds.mapping.ToWithdrawRecord(withdraw), nil
 }
 
 func (ds *withdrawRepository) Delete(withdrawID int) error {

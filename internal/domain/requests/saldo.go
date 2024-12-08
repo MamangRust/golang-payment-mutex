@@ -13,11 +13,11 @@ type CreateSaldoRequest struct {
 }
 
 type UpdateSaldoRequest struct {
-	SaldoID        int       `json:"saldo_id" validate:"required"`
-	UserID         int       `json:"user_id" validate:"required"`
-	TotalBalance   int       `json:"total_balance" validate:"required"`
-	WithdrawAmount int       `json:"withdraw_amount" validate:"required_without=WithdrawTime"`
-	WithdrawTime   time.Time `json:"withdraw_time" validate:"required_without=WithdrawAmount"`
+	SaldoID        int        `json:"saldo_id" validate:"required"`
+	UserID         int        `json:"user_id" validate:"required"`
+	TotalBalance   int        `json:"total_balance" validate:"required"`
+	WithdrawAmount *int       `json:"withdraw_amount" validate:"required_without=WithdrawTime"`
+	WithdrawTime   *time.Time `json:"withdraw_time" validate:"required_without=WithdrawAmount"`
 }
 
 type UpdateSaldoBalance struct {

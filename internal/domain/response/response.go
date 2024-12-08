@@ -31,34 +31,24 @@ func ResponseToken(w http.ResponseWriter, message string, token string, status i
 	}
 }
 
-func ResponseMessage(w http.ResponseWriter, message string, data interface{}, status int) {
-	res := Response{
-		Status:  status,
-		Message: message,
-		Data:    data,
-	}
-
-	err := json.NewEncoder(w).Encode(res)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func ResponseError(w http.ResponseWriter, status int, message string) {
+func ResponseMessage[T any](w http.ResponseWriter, res ApiResponse[T]) {
 	w.Header().Set("Content-Type", "application/json")
-
-	w.WriteHeader(status)
-
-	res := Response{
-		Status:  status,
-		Message: message,
-		Data:    nil,
-	}
+	w.WriteHeader(http.StatusOK)
 
 	err := json.NewEncoder(w).Encode(res)
 	if err != nil {
 		log.Fatal("Error encoding response: ", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+	}
+}
+
+func ResponseError(w http.ResponseWriter, res ErrorResponse) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusInternalServerError)
+
+	err := json.NewEncoder(w).Encode(res)
+	if err != nil {
+		log.Fatal("Error encoding response: ", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }

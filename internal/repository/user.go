@@ -2,26 +2,30 @@ package repository
 
 import (
 	"fmt"
+	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
+	recordmapper "payment-mutex/internal/mapper/record"
 	"payment-mutex/internal/models"
 	"payment-mutex/pkg/randomvcc"
 	"sync"
 )
 
 type userRepository struct {
-	mu     sync.RWMutex
-	users  map[int]models.User
-	nextID int
+	mu      sync.RWMutex
+	users   map[int]models.User
+	nextID  int
+	mapping recordmapper.UserRecordMapping
 }
 
-func NewUserRepository() *userRepository {
+func NewUserRepository(mapping recordmapper.UserRecordMapping) *userRepository {
 	return &userRepository{
-		users:  make(map[int]models.User),
-		nextID: 1,
+		users:   make(map[int]models.User),
+		nextID:  1,
+		mapping: mapping,
 	}
 }
 
-func (ds *userRepository) ReadAll() (*[]models.User, error) {
+func (ds *userRepository) ReadAll() ([]*record.UserRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
@@ -30,36 +34,36 @@ func (ds *userRepository) ReadAll() (*[]models.User, error) {
 		users = append(users, user)
 	}
 
-	return &users, nil
+	return ds.mapping.ToUsersRecord(users), nil
 }
 
-func (ds *userRepository) Read(userID int) (*models.User, error) {
+func (ds *userRepository) Read(userID int) (*record.UserRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
 	for _, user := range ds.users {
 		if user.UserID == userID {
-			return &user, nil
+			return ds.mapping.ToUserRecord(user), nil
 		}
 	}
 
 	return nil, fmt.Errorf("user with ID %d not found", userID)
 }
 
-func (ds *userRepository) ReadByEmail(email string) (*models.User, error) {
+func (ds *userRepository) ReadByEmail(email string) (*record.UserRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
 	for _, user := range ds.users {
 		if user.Email == email {
-			return &user, nil
+			return ds.mapping.ToUserRecord(user), nil
 		}
 	}
 
 	return nil, fmt.Errorf("user with email %s not found", email)
 }
 
-func (ds *userRepository) Create(request requests.CreateUserRequest) (*models.User, error) {
+func (ds *userRepository) Create(request requests.CreateUserRequest) (*record.UserRecord, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
@@ -88,10 +92,10 @@ func (ds *userRepository) Create(request requests.CreateUserRequest) (*models.Us
 	ds.users[user.UserID] = user
 	ds.nextID++
 
-	return &user, nil
+	return ds.mapping.ToUserRecord(user), nil
 }
 
-func (ds *userRepository) Update(request requests.UpdateUserRequest) (*models.User, error) {
+func (ds *userRepository) Update(request requests.UpdateUserRequest) (*record.UserRecord, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
@@ -115,7 +119,7 @@ func (ds *userRepository) Update(request requests.UpdateUserRequest) (*models.Us
 
 	ds.users[request.UserID] = user
 
-	return nil, fmt.Errorf("user with ID %d not found", request.UserID)
+	return ds.mapping.ToUserRecord(user), fmt.Errorf("user with ID %d not found", request.UserID)
 }
 
 func (ds *userRepository) Delete(userID int) error {

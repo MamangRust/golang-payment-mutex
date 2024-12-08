@@ -1,8 +1,9 @@
 package service
 
 import (
+	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
-	"payment-mutex/internal/models"
+	"payment-mutex/internal/domain/response"
 	"payment-mutex/internal/repository"
 	"payment-mutex/pkg/auth"
 	"payment-mutex/pkg/hash"
@@ -27,12 +28,12 @@ func NewAuthService(hash hash.Hashing, repository repository.UserRepository, tok
 	}
 }
 
-func (s *authService) RegisterUser(request *requests.RegisterRequest) (*models.User, error) {
+func (s *authService) RegisterUser(request *requests.RegisterRequest) (*response.ApiResponse[record.UserRecord], *response.ErrorResponse) {
 	hashing, err := s.hash.HashPassword(request.Password)
 
 	if err != nil {
 		s.logger.Error("Error hashing password: ", zap.Error(err))
-		return nil, err
+		return nil, &response.ErrorResponse{}
 	}
 
 	res, err := s.repository.Create(requests.CreateUserRequest{
@@ -43,22 +44,31 @@ func (s *authService) RegisterUser(request *requests.RegisterRequest) (*models.U
 		ConfirmPassword: request.ConfirmPassword,
 	})
 
+	res.Password = nil
+
 	if err != nil {
 		s.logger.Error("Error creating user: ", zap.Error(err))
-		return nil, err
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Error creating user",
+		}
 	}
 
-	return res, nil
+	return &response.ApiResponse[record.UserRecord]{
+		Status:  "success",
+		Message: "register success",
+		Data:    *res,
+	}, nil
 }
 
-func (s *authService) Login(request *requests.AuthRequest) (string, error) {
+func (s *authService) Login(request *requests.AuthRequest) (*response.ApiResponse[string], error) {
 	res, err := s.repository.ReadByEmail(request.Email)
 	if err != nil {
 		s.logger.Error("failed login: ", zap.Error(err))
-		return "", err
+		return nil, err
 	}
 
-	err = s.hash.ComparePassword(res.Password, request.Password)
+	err = s.hash.ComparePassword(*res.Password, request.Password)
 
 	if err != nil {
 		s.logger.Error("Error comparing password: ", zap.Error(err))
@@ -68,10 +78,14 @@ func (s *authService) Login(request *requests.AuthRequest) (string, error) {
 
 	if err != nil {
 		s.logger.Error("failed create jwt token: ", zap.Error(err))
-		return "", err
+		return nil, err
 	}
 
-	return token, nil
+	return &response.ApiResponse[string]{
+		Status:  "success",
+		Message: "login success",
+		Data:    token,
+	}, nil
 
 }
 

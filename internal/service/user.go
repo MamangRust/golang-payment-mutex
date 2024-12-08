@@ -1,8 +1,9 @@
 package service
 
 import (
+	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
-	"payment-mutex/internal/models"
+	"payment-mutex/internal/domain/response"
 	"payment-mutex/internal/repository"
 	"payment-mutex/pkg/logger"
 
@@ -24,75 +25,109 @@ func NewUserService(
 	}
 }
 
-func (ds *userService) FindAll() (*[]models.User, error) {
-	user, err := ds.userRepository.ReadAll()
-
+func (ds *userService) FindAll() (*response.ApiResponse[[]*record.UserRecord], *response.ErrorResponse) {
+	users, err := ds.userRepository.ReadAll()
 	if err != nil {
-		ds.logger.Error("failed find all user: ", zap.Error(err))
-
-		return nil, err
+		ds.logger.Error("failed to find all users", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to retrieve users",
+		}
 	}
 
-	return user, nil
-
+	return &response.ApiResponse[[]*record.UserRecord]{
+		Status:  "success",
+		Message: "Users retrieved successfully",
+		Data:    users,
+	}, nil
 }
 
-func (ds *userService) FindByID(id int) (*models.User, error) {
+func (ds *userService) FindByID(id int) (*response.ApiResponse[record.UserRecord], *response.ErrorResponse) {
 	user, err := ds.userRepository.Read(id)
-
 	if err != nil {
-		ds.logger.Error("failed find user by id: ", zap.Error(err))
-
-		return nil, err
+		ds.logger.Error("failed to find user by ID", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "User not found",
+		}
 	}
 
-	return user, nil
+	return &response.ApiResponse[record.UserRecord]{
+		Status:  "success",
+		Message: "User retrieved successfully",
+		Data:    *user,
+	}, nil
 }
 
-func (ds *userService) Create(request requests.CreateUserRequest) (*models.User, error) {
-	_, err := ds.userRepository.ReadByEmail(request.Email)
-
-	if err != nil {
-		ds.logger.Error("failed find user by email: ", zap.Error(err))
-
-		return nil, err
+func (ds *userService) Create(request requests.CreateUserRequest) (*response.ApiResponse[record.UserRecord], *response.ErrorResponse) {
+	existingUser, err := ds.userRepository.ReadByEmail(request.Email)
+	if existingUser != nil {
+		ds.logger.Error("user already exists with the given email", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "User with the given email already exists",
+		}
 	}
 
 	res, err := ds.userRepository.Create(request)
-
 	if err != nil {
-		ds.logger.Error("failed create user: ", zap.Error(err))
-		return nil, err
+		ds.logger.Error("failed to create user", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to create user",
+		}
 	}
 
-	return res, nil
+	res.Password = nil
+
+	return &response.ApiResponse[record.UserRecord]{
+		Status:  "success",
+		Message: "User created successfully",
+		Data:    *res,
+	}, nil
 }
 
-func (ds *userService) Update(request requests.UpdateUserRequest) (*models.User, error) {
-	_, err := ds.userRepository.ReadByEmail(request.Email)
-
-	if err != nil {
-		ds.logger.Error("failed find user by email: ", zap.Error(err))
-
-		return nil, err
+func (ds *userService) Update(request requests.UpdateUserRequest) (*response.ApiResponse[record.UserRecord], *response.ErrorResponse) {
+	existingUser, err := ds.userRepository.ReadByEmail(request.Email)
+	if existingUser == nil {
+		ds.logger.Error("user not found with the given email", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "User with the given email not found",
+		}
 	}
 
 	res, err := ds.userRepository.Update(request)
-
 	if err != nil {
-		ds.logger.Error("failed update user: ", zap.Error(err))
-		return nil, err
+		ds.logger.Error("failed to update user", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to update user",
+		}
 	}
 
-	return res, nil
+	res.Password = nil
+
+	return &response.ApiResponse[record.UserRecord]{
+		Status:  "success",
+		Message: "User updated successfully",
+		Data:    *res,
+	}, nil
 }
 
-func (ds *userService) Delete(userID int) error {
+func (ds *userService) Delete(userID int) (*response.ApiResponse[string], *response.ErrorResponse) {
 	err := ds.userRepository.Delete(userID)
-
 	if err != nil {
-		ds.logger.Error("failed delete user: ", zap.Error(err))
+		ds.logger.Error("failed to delete user", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to delete user",
+		}
 	}
 
-	return nil
+	return &response.ApiResponse[string]{
+		Status:  "success",
+		Message: "User deleted successfully",
+		Data:    "",
+	}, nil
 }

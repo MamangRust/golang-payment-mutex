@@ -19,79 +19,118 @@ func (h *handler) initUserGroup(prefix string, router *http.ServeMux) {
 
 func (h *handler) FindAllUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Method Not Allowed",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
 	res, err := h.services.User.FindAll()
 
 	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error find all saldo")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error find all user",
+		}
+
+		response.ResponseError(w, res)
 		return
 	}
 
-	response.ResponseMessage(w, "Success find all user", res, http.StatusOK)
+	response.ResponseMessage(w, *res)
 }
 
 func (h *handler) FindByIdUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Method Not Allowed",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 
 	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error convert id")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error convert id",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
-	res, err := h.services.User.FindByID(id)
+	res, errRes := h.services.User.FindByID(id)
 
-	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error find saldo by user id")
+	if errRes != nil {
+		response.ResponseError(w, *errRes)
 		return
 	}
 
-	response.ResponseMessage(w, "Success find user by user id", res, http.StatusOK)
+	response.ResponseMessage(w, *res)
 }
 
 func (h *handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Method Not Allowed",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
 	var createUser requests.CreateUserRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&createUser); err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error invalid request")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error invalid request",
+		}
+		response.ResponseError(w, res)
+		return
 	}
 
 	if err := createUser.Validate(); err != nil {
-		response.ResponseError(w, http.StatusBadRequest, "Error invalid validate request")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error invalid validate request",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
-	res, err := h.services.User.Create(createUser)
+	res, errRes := h.services.User.Create(createUser)
 
-	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error create saldo")
+	if errRes != nil {
+		response.ResponseError(w, *errRes)
 		return
 	}
 
-	response.ResponseMessage(w, "Success create saldo", res, http.StatusCreated)
+	response.ResponseMessage(w, *res)
 }
 
 func (h *handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Method Not Allowed",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 
 	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error convert id")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error convert id",
+		}
+		response.ResponseError(w, res)
+		return
 	}
 
 	var updateUser requests.UpdateUserRequest
@@ -99,42 +138,59 @@ func (h *handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	updateUser.UserID = id
 
 	if err := json.NewDecoder(r.Body).Decode(&updateUser); err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error invalid request")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error invalid request",
+		}
+		response.ResponseError(w, res)
+		return
 	}
 
 	if err := updateUser.Validate(); err != nil {
-		response.ResponseError(w, http.StatusBadRequest, "Error invalid validate request")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error invalid validate request",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
-	res, err := h.services.User.Update(updateUser)
+	res, errRes := h.services.User.Update(updateUser)
 
-	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error update saldo")
+	if errRes != nil {
+		response.ResponseError(w, *errRes)
 		return
 	}
 
-	response.ResponseMessage(w, "Success update user", res, http.StatusOK)
+	response.ResponseMessage(w, *res)
 }
 
 func (h *handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Method Not Allowed",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
 
 	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error convert id")
-	}
-
-	err = h.services.Saldo.Delete(id)
-
-	if err != nil {
-		response.ResponseError(w, http.StatusInternalServerError, "Error delete saldo")
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Invalid ID format",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
-	response.ResponseMessage(w, "Success delete saldo", nil, http.StatusOK)
+	apiRes, errRes := h.services.Saldo.Delete(id)
+	if errRes != nil {
+		response.ResponseError(w, *errRes)
+		return
+	}
+
+	response.ResponseMessage(w, *apiRes)
 }

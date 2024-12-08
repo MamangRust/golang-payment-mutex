@@ -1,5 +1,7 @@
 package repository
 
+import recordmapper "payment-mutex/internal/mapper/record"
+
 type Repositories struct {
 	User     UserRepository
 	Saldo    SaldoRepository
@@ -8,12 +10,16 @@ type Repositories struct {
 	Withdraw WithdrawRepository
 }
 
-func NewRepositorys() *Repositories {
+type Deps struct {
+	MapperRecord recordmapper.RecordMapper
+}
+
+func NewRepositorys(deps Deps) *Repositories {
 	return &Repositories{
-		User:     NewUserRepository(),
-		Saldo:    NewSaldoRepository(),
-		Topup:    NewTopupRepository(),
-		Transfer: NewTransferRepository(),
-		Withdraw: NewWithdrawRepository(),
+		User:     NewUserRepository(deps.MapperRecord.UserRecordMapper),
+		Saldo:    NewSaldoRepository(deps.MapperRecord.SaldoRecordMapper),
+		Topup:    NewTopupRepository(deps.MapperRecord.TopupRecordMapper),
+		Transfer: NewTransferRepository(deps.MapperRecord.TransferRecordMapper),
+		Withdraw: NewWithdrawRepository(deps.MapperRecord.WithdrawRecordMapper),
 	}
 }

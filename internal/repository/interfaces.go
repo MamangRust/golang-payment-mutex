@@ -1,58 +1,58 @@
 package repository
 
 import (
+	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
-	"payment-mutex/internal/models"
 )
 
 type UserRepository interface {
-	ReadAll() (*[]models.User, error)
-	Read(userID int) (*models.User, error)
-	ReadByEmail(email string) (*models.User, error)
-	Create(request requests.CreateUserRequest) (*models.User, error)
-	Update(request requests.UpdateUserRequest) (*models.User, error)
+	ReadAll() ([]*record.UserRecord, error)
+	Read(userID int) (*record.UserRecord, error)
+	ReadByEmail(email string) (*record.UserRecord, error)
+	Create(request requests.CreateUserRequest) (*record.UserRecord, error)
+	Update(request requests.UpdateUserRequest) (*record.UserRecord, error)
 	Delete(userID int) error
 }
 
 type SaldoRepository interface {
-	ReadAll() (*[]models.Saldo, error)
-	Read(saldoID int) (*models.Saldo, error)
-	ReadByUserID(userID int) (*models.Saldo, error)
-	ReadByUsersID(userID int) (*[]models.Saldo, error)
-	Create(request requests.CreateSaldoRequest) (*models.Saldo, error)
-	Update(request requests.UpdateSaldoRequest) (*models.Saldo, error)
-	UpdateBalance(request requests.UpdateSaldoBalance) (*models.Saldo, error)
-	UpdateSaldoWithdraw(request requests.UpdateSaldoWithdraw) (*models.Saldo, error)
+	ReadAll() ([]*record.SaldoRecord, error)
+	Read(saldoID int) (*record.SaldoRecord, error)
+	ReadByUserID(userID int) (*record.SaldoRecord, error)
+	ReadByUsersID(userID int) ([]*record.SaldoRecord, error)
+	Create(request requests.CreateSaldoRequest) (*record.SaldoRecord, error)
+	Update(request requests.UpdateSaldoRequest) (*record.SaldoRecord, error)
+	UpdateBalance(request requests.UpdateSaldoBalance) (*record.SaldoRecord, error)
+	UpdateSaldoWithdraw(request requests.UpdateSaldoWithdraw) (*record.SaldoRecord, error)
 	Delete(saldoID int) error
 }
 
 type TopupRepository interface {
-	ReadAll() (*[]models.Topup, error)
-	Read(topupID int) (*models.Topup, error)
-	ReadByUserID(userID int) (*models.Topup, error)
-	ReadByUsersID(userID int) (*[]models.Topup, error)
-	Create(request requests.CreateTopupRequest) (*models.Topup, error)
-	Update(request requests.UpdateTopupRequest) (*models.Topup, error)
-	UpdateAmount(request requests.UpdateTopupAmount) (*models.Topup, error)
+	ReadAll() ([]*record.TopupRecord, error)
+	Read(topupID int) (*record.TopupRecord, error)
+	ReadByUserID(userID int) (*record.TopupRecord, error)
+	ReadByUsersID(userID int) ([]*record.TopupRecord, error)
+	Create(request requests.CreateTopupRequest) (*record.TopupRecord, error)
+	Update(request requests.UpdateTopupRequest) (*record.TopupRecord, error)
+	UpdateAmount(request requests.UpdateTopupAmount) (*record.TopupRecord, error)
 	Delete(topupID int) error
 }
 
 type TransferRepository interface {
-	ReadAll() (*[]models.Transfer, error)
-	Read(transferID int) (*models.Transfer, error)
-	ReadByUsersID(userID int) (*[]models.Transfer, error)
-	ReadByUserID(userID int) (*models.Transfer, error)
-	Create(request requests.CreateTransferRequest) (*models.Transfer, error)
-	Update(request requests.UpdateTransferRequest) (*models.Transfer, error)
+	ReadAll() ([]*record.TransferRecord, error)
+	Read(transferID int) (*record.TransferRecord, error)
+	ReadByUsersID(userID int) ([]*record.TransferRecord, error)
+	ReadByUserID(userID int) (*record.TransferRecord, error)
+	Create(request requests.CreateTransferRequest) (*record.TransferRecord, error)
+	Update(request requests.UpdateTransferRequest) (*record.TransferRecord, error)
 	Delete(transferID int) error
 }
 
 type WithdrawRepository interface {
-	ReadAll() (*[]models.Withdraw, error)
-	Read(withdrawID int) (*models.Withdraw, error)
-	ReadByUsersID(userID int) (*[]models.Withdraw, error)
-	ReadByUserID(userID int) (*models.Withdraw, error)
-	Create(request requests.CreateWithdrawRequest) (*models.Withdraw, error)
-	Update(request requests.UpdateWithdrawRequest) (*models.Withdraw, error)
+	ReadAll() ([]*record.WithdrawRecord, error)
+	Read(withdrawID int) (*record.WithdrawRecord, error)
+	ReadByUsersID(userID int) ([]*record.WithdrawRecord, error)
+	ReadByUserID(userID int) (*record.WithdrawRecord, error)
+	Create(request requests.CreateWithdrawRequest) (*record.WithdrawRecord, error)
+	Update(request requests.UpdateWithdrawRequest) (*record.WithdrawRecord, error)
 	Delete(transferID int) error
 }

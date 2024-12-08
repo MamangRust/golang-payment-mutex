@@ -1,59 +1,60 @@
 package service
 
 import (
+	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
-	"payment-mutex/internal/models"
+	"payment-mutex/internal/domain/response"
 )
 
 type AuthService interface {
-	RegisterUser(requests *requests.RegisterRequest) (*models.User, error)
-	Login(request *requests.AuthRequest) (string, error)
+	RegisterUser(request *requests.RegisterRequest) (*response.ApiResponse[record.UserRecord], *response.ErrorResponse)
+	Login(request *requests.AuthRequest) (*response.ApiResponse[string], error)
 }
 
 type UserService interface {
-	FindAll() (*[]models.User, error)
-	FindByID(id int) (*models.User, error)
-	Create(request requests.CreateUserRequest) (*models.User, error)
-	Update(request requests.UpdateUserRequest) (*models.User, error)
-	Delete(userID int) error
+	FindAll() (*response.ApiResponse[[]*record.UserRecord], *response.ErrorResponse)
+	FindByID(id int) (*response.ApiResponse[record.UserRecord], *response.ErrorResponse)
+	Create(request requests.CreateUserRequest) (*response.ApiResponse[record.UserRecord], *response.ErrorResponse)
+	Update(request requests.UpdateUserRequest) (*response.ApiResponse[record.UserRecord], *response.ErrorResponse)
+	Delete(userID int) (*response.ApiResponse[string], *response.ErrorResponse)
 }
 
 type SaldoService interface {
-	FindAll() (*[]models.Saldo, error)
-	FindByUserID(userID int) (*models.Saldo, error)
-	FindByUsersID(userID int) (*[]models.Saldo, error)
-	FindById(saldoID int) (*models.Saldo, error)
-	Create(requests requests.CreateSaldoRequest) (*models.Saldo, error)
-	Update(requests requests.UpdateSaldoRequest) (*models.Saldo, error)
-	Delete(saldoID int) error
+	FindAll() (*response.ApiResponse[[]*record.SaldoRecord], *response.ErrorResponse)
+	FindByUserID(userID int) (*response.ApiResponse[*record.SaldoRecord], *response.ErrorResponse)
+	FindByUsersID(userID int) (*response.ApiResponse[[]*record.SaldoRecord], *response.ErrorResponse)
+	FindById(saldoID int) (*response.ApiResponse[*record.SaldoRecord], *response.ErrorResponse)
+	Create(requests requests.CreateSaldoRequest) (*response.ApiResponse[*record.SaldoRecord], *response.ErrorResponse)
+	Update(requests requests.UpdateSaldoRequest) (*response.ApiResponse[*record.SaldoRecord], *response.ErrorResponse)
+	Delete(saldoID int) (*response.ApiResponse[string], *response.ErrorResponse)
 }
 
 type TopupService interface {
-	FindAll() (*[]models.Topup, error)
-	FindById(topupID int) (*models.Topup, error)
-	FindByUserID(userID int) (*models.Topup, error)
-	FindByUsersID(userID int) (*[]models.Topup, error)
-	Create(requests requests.CreateTopupRequest) (*models.Topup, error)
-	Update(requests requests.UpdateTopupRequest) (*models.Topup, error)
-	Delete(topupID int) error
+	FindAll() (*response.ApiResponse[[]*record.TopupRecord], *response.ErrorResponse)
+	FindById(topupID int) (*response.ApiResponse[*record.TopupRecord], *response.ErrorResponse)
+	FindByUserID(userID int) (*response.ApiResponse[*record.TopupRecord], *response.ErrorResponse)
+	FindByUsersID(userID int) (*response.ApiResponse[[]*record.TopupRecord], *response.ErrorResponse)
+	Create(requests requests.CreateTopupRequest) (*response.ApiResponse[*record.TopupRecord], *response.ErrorResponse)
+	Update(requests requests.UpdateTopupRequest) (*response.ApiResponse[*record.TopupRecord], *response.ErrorResponse)
+	Delete(topupID int) (*response.ApiResponse[string], *response.ErrorResponse)
 }
 
 type TransferService interface {
-	FindAll() (*[]models.Transfer, error)
-	FindById(transferID int) (*models.Transfer, error)
-	FindByUsersID(userID int) (*[]models.Transfer, error)
-	FindByUserID(userID int) (*models.Transfer, error)
-	Create(requests requests.CreateTransferRequest) (*models.Transfer, error)
-	Update(requests requests.UpdateTransferRequest) (*models.Transfer, error)
-	Delete(transferID int) error
+	FindAll() (*response.ApiResponse[[]*record.TransferRecord], *response.ErrorResponse)
+	FindById(transferID int) (*response.ApiResponse[*record.TransferRecord], *response.ErrorResponse)
+	FindByUsersID(userID int) (*response.ApiResponse[[]*record.TransferRecord], *response.ErrorResponse)
+	FindByUserID(userID int) (*response.ApiResponse[*record.TransferRecord], *response.ErrorResponse)
+	Create(requests requests.CreateTransferRequest) (*response.ApiResponse[*record.TransferRecord], *response.ErrorResponse)
+	Update(requests requests.UpdateTransferRequest) (*response.ApiResponse[*record.TransferRecord], *response.ErrorResponse)
+	Delete(transferID int) (*response.ApiResponse[string], *response.ErrorResponse)
 }
 
 type WithdrawService interface {
-	FindAll() (*[]models.Withdraw, error)
-	FindByUsersID(userID int) (*[]models.Withdraw, error)
-	FindByUserID(userID int) (*models.Withdraw, error)
-	FindById(withdrawID int) (*models.Withdraw, error)
-	Create(requests requests.CreateWithdrawRequest) (*models.Withdraw, error)
-	Update(requests requests.UpdateWithdrawRequest) (*models.Withdraw, error)
-	Delete(withdrawID int) error
+	FindAll() (*response.ApiResponse[[]*record.WithdrawRecord], *response.ErrorResponse)
+	FindByUsersID(userID int) (*response.ApiResponse[[]*record.WithdrawRecord], *response.ErrorResponse)
+	FindByUserID(userID int) (*response.ApiResponse[*record.WithdrawRecord], *response.ErrorResponse)
+	FindById(withdrawID int) (*response.ApiResponse[*record.WithdrawRecord], *response.ErrorResponse)
+	Create(requests requests.CreateWithdrawRequest) (*response.ApiResponse[*record.WithdrawRecord], *response.ErrorResponse)
+	Update(requests requests.UpdateWithdrawRequest) (*response.ApiResponse[*record.WithdrawRecord], *response.ErrorResponse)
+	Delete(withdrawID int) (*response.ApiResponse[string], *response.ErrorResponse)
 }
