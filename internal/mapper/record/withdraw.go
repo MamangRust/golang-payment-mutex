@@ -15,7 +15,7 @@ func NewWithdrawRecordMapper() *withdrawRecordMapper {
 func (s *withdrawRecordMapper) ToWithdrawRecord(withdraw models.Withdraw) *record.WithdrawRecord {
 	return &record.WithdrawRecord{
 		WithdrawID:     withdraw.WithdrawID,
-		UserID:         withdraw.UserID,
+		CardNumber:     withdraw.CardNumber,
 		WithdrawAmount: withdraw.WithdrawAmount,
 		WithdrawTime:   withdraw.WithdrawTime,
 	}

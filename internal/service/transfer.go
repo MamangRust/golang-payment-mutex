@@ -13,6 +13,7 @@ import (
 
 type transferService struct {
 	userRepository     repository.UserRepository
+	cardRepository     repository.CardRepository
 	saldoRepository    repository.SaldoRepository
 	transferRepository repository.TransferRepository
 	logger             logger.Logger
@@ -20,8 +21,11 @@ type transferService struct {
 
 func NewTransferService(
 	userRepository repository.UserRepository,
-	transferRepository repository.TransferRepository, saldoRepository repository.SaldoRepository, logger logger.Logger) *transferService {
+	cardRepository repository.CardRepository,
+	transferRepository repository.TransferRepository,
+	saldoRepository repository.SaldoRepository, logger logger.Logger) *transferService {
 	return &transferService{
+		userRepository:     userRepository,
 		transferRepository: transferRepository,
 		saldoRepository:    saldoRepository,
 		logger:             logger,
@@ -62,88 +66,37 @@ func (s *transferService) FindById(transferID int) (*response.ApiResponse[*recor
 	}, nil
 }
 
-func (s *transferService) FindByUserID(userID int) (*response.ApiResponse[*record.TransferRecord], *response.ErrorResponse) {
-	_, err := s.userRepository.Read(userID)
-	if err != nil {
-		s.logger.Error("failed to find user by user ID", zap.Error(err))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "User not found",
-		}
-	}
-
-	transfer, err := s.transferRepository.ReadByUserID(userID)
-	if err != nil {
-		s.logger.Error("failed to find transfer by user ID", zap.Error(err))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve transfer",
-		}
-	}
-
-	return &response.ApiResponse[*record.TransferRecord]{
-		Status:  "success",
-		Message: "Transfer retrieved successfully",
-		Data:    transfer,
-	}, nil
-}
-
-func (s *transferService) FindByUsersID(userID int) (*response.ApiResponse[[]*record.TransferRecord], *response.ErrorResponse) {
-	transfers, err := s.transferRepository.ReadByUsersID(userID)
-	if err != nil {
-		s.logger.Error("Failed to find transfer records by user ID", zap.Error(err))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve transfer records for the specified user.",
-		}
-	}
-
-	if transfers == nil || len(transfers) == 0 {
-		s.logger.Error("No transfer records found for user ID", zap.Int("userID", userID))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "No transfer records found for the specified user ID.",
-		}
-	}
-
-	return &response.ApiResponse[[]*record.TransferRecord]{
-		Status:  "success",
-		Message: "Successfully retrieved transfer records for the user.",
-		Data:    transfers,
-	}, nil
-}
-
 func (s *transferService) Create(request requests.CreateTransferRequest) (*response.ApiResponse[*record.TransferRecord], *response.ErrorResponse) {
-	_, err := s.userRepository.Read(request.TransferFrom)
+	_, err := s.cardRepository.ReadByCardNumber(request.TransferFrom)
 	if err != nil {
-		s.logger.Error("failed to find sender user by ID", zap.Error(err))
+		s.logger.Error("failed to find sender card by Number", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Sender user not found",
+			Message: "Sender card not found",
 		}
 	}
 
-	_, err = s.userRepository.Read(request.TransferTo)
+	_, err = s.cardRepository.ReadByCardNumber(request.TransferTo)
 	if err != nil {
-		s.logger.Error("failed to find receiver user by ID", zap.Error(err))
+		s.logger.Error("failed to find receiver card by number", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Receiver user not found",
+			Message: "Receiver card not found",
 		}
 	}
 
-	senderSaldo, err := s.saldoRepository.ReadByUserID(request.TransferFrom)
+	senderSaldo, err := s.saldoRepository.ReadByCardNumber(request.TransferFrom)
 	if err != nil {
-		s.logger.Error("failed to find sender saldo by user ID", zap.Error(err))
+		s.logger.Error("failed to find sender saldo by card number", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find sender saldo",
 		}
 	}
 
-	receiverSaldo, err := s.saldoRepository.ReadByUserID(request.TransferTo)
+	receiverSaldo, err := s.saldoRepository.ReadByCardNumber(request.TransferTo)
 	if err != nil {
-		s.logger.Error("failed to find receiver saldo by user ID", zap.Error(err))
+		s.logger.Error("failed to find receiver saldo by card number", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Failed to find receiver saldo",
@@ -161,7 +114,7 @@ func (s *transferService) Create(request requests.CreateTransferRequest) (*respo
 	receiverSaldo.TotalBalance += request.TransferAmount
 
 	_, err = s.saldoRepository.UpdateBalance(requests.UpdateSaldoBalance{
-		UserID:       senderSaldo.UserID,
+		CardNumber:   senderSaldo.CardNumber,
 		TotalBalance: senderSaldo.TotalBalance,
 	})
 	if err != nil {
@@ -173,7 +126,7 @@ func (s *transferService) Create(request requests.CreateTransferRequest) (*respo
 	}
 
 	_, err = s.saldoRepository.UpdateBalance(requests.UpdateSaldoBalance{
-		UserID:       receiverSaldo.UserID,
+		CardNumber:   receiverSaldo.CardNumber,
 		TotalBalance: receiverSaldo.TotalBalance,
 	})
 	if err != nil {
@@ -215,7 +168,7 @@ func (s *transferService) Update(request requests.UpdateTransferRequest) (*respo
 	amountDifference := request.TransferAmount - transfer.TransferAmount
 
 	// Update sender's saldo
-	senderSaldo, err := s.saldoRepository.ReadByUserID(transfer.TransferFrom)
+	senderSaldo, err := s.saldoRepository.ReadByCardNumber(transfer.TransferFrom)
 	if err != nil {
 		s.logger.Error("Failed to find sender's saldo by user ID", zap.Error(err))
 		return nil, &response.ErrorResponse{
@@ -226,7 +179,7 @@ func (s *transferService) Update(request requests.UpdateTransferRequest) (*respo
 
 	newSenderBalance := senderSaldo.TotalBalance - amountDifference
 	if newSenderBalance < 0 {
-		s.logger.Error("Insufficient balance for sender", zap.Int("senderID", transfer.TransferFrom))
+		s.logger.Error("Insufficient balance for sender", zap.String("senderID", transfer.TransferFrom))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Insufficient balance for sender",
@@ -235,7 +188,7 @@ func (s *transferService) Update(request requests.UpdateTransferRequest) (*respo
 
 	senderSaldo.TotalBalance = newSenderBalance
 	_, err = s.saldoRepository.UpdateBalance(requests.UpdateSaldoBalance{
-		UserID:       senderSaldo.UserID,
+		CardNumber:   senderSaldo.CardNumber,
 		TotalBalance: senderSaldo.TotalBalance,
 	})
 	if err != nil {
@@ -247,13 +200,13 @@ func (s *transferService) Update(request requests.UpdateTransferRequest) (*respo
 	}
 
 	// Update receiver's saldo
-	receiverSaldo, err := s.saldoRepository.ReadByUserID(transfer.TransferTo)
+	receiverSaldo, err := s.saldoRepository.ReadByCardNumber(transfer.TransferTo)
 	if err != nil {
 		s.logger.Error("Failed to find receiver's saldo by user ID", zap.Error(err))
 
 		// Rollback the sender's saldo if the receiver's saldo update fails
 		rollbackSenderBalance := requests.UpdateSaldoBalance{
-			UserID:       transfer.TransferFrom,
+			CardNumber:   transfer.TransferFrom,
 			TotalBalance: senderSaldo.TotalBalance,
 		}
 		_, rollbackErr := s.saldoRepository.UpdateBalance(rollbackSenderBalance)
@@ -271,7 +224,7 @@ func (s *transferService) Update(request requests.UpdateTransferRequest) (*respo
 	receiverSaldo.TotalBalance = newReceiverBalance
 
 	_, err = s.saldoRepository.UpdateBalance(requests.UpdateSaldoBalance{
-		UserID:       receiverSaldo.UserID,
+		CardNumber:   receiverSaldo.CardNumber,
 		TotalBalance: receiverSaldo.TotalBalance,
 	})
 	if err != nil {
@@ -279,11 +232,11 @@ func (s *transferService) Update(request requests.UpdateTransferRequest) (*respo
 
 		// Rollback both sender's and receiver's saldos if the update fails
 		rollbackSenderBalance := requests.UpdateSaldoBalance{
-			UserID:       transfer.TransferFrom,
+			CardNumber:   transfer.TransferFrom,
 			TotalBalance: senderSaldo.TotalBalance + amountDifference,
 		}
 		rollbackReceiverBalance := requests.UpdateSaldoBalance{
-			UserID:       transfer.TransferTo,
+			CardNumber:   transfer.TransferTo,
 			TotalBalance: receiverSaldo.TotalBalance - amountDifference,
 		}
 
@@ -303,11 +256,11 @@ func (s *transferService) Update(request requests.UpdateTransferRequest) (*respo
 
 		// Rollback saldos if the transfer update fails
 		rollbackSenderBalance := requests.UpdateSaldoBalance{
-			UserID:       transfer.TransferFrom,
+			CardNumber:   transfer.TransferFrom,
 			TotalBalance: senderSaldo.TotalBalance + amountDifference,
 		}
 		rollbackReceiverBalance := requests.UpdateSaldoBalance{
-			UserID:       transfer.TransferTo,
+			CardNumber:   transfer.TransferTo,
 			TotalBalance: receiverSaldo.TotalBalance - amountDifference,
 		}
 

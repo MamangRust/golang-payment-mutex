@@ -9,37 +9,41 @@ import (
 	"strconv"
 )
 
-func (h *handler) InitWithdrawGroup(prefix string, r *http.ServeMux) {
-	r.Handle(prefix+"/find_all", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.FindAllWithdraw)))
-	r.Handle(prefix+"/find_by_id", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.FindByIdWithdraw)))
-	r.Handle(prefix+"/create", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.CreateWithdraw)))
-	r.Handle(prefix+"/update", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.UpdateWithdraw)))
-	r.Handle(prefix+"/delete", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.DeleteWithdraw)))
+func (h *handler) initTransactionGroup(prefix string, router *http.ServeMux) {
+	router.Handle(prefix+"/find_all", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.FindAllTransaction)))
+	router.Handle(prefix+"/find_by_id", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.FindByIdTransaction)))
+	router.Handle(prefix+"/create", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.CreateTransaction)))
+	router.Handle(prefix+"/update", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.UpdateTransaction)))
+	router.Handle(prefix+"/delete", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.DeleteTransaction)))
 }
 
-func (h *handler) FindAllWithdraw(w http.ResponseWriter, r *http.Request) {
+func (h *handler) FindAllTransaction(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	res, err := h.services.Withdraw.FindAll()
-
-	if err != nil {
 		res := response.ErrorResponse{
 			Status:  "error",
-			Message: "Error find all saldo",
+			Message: "Method Not Allowed",
 		}
-
 		response.ResponseError(w, res)
 		return
 	}
 
-	response.ResponseMessage(w, *res)
+	res, err := h.services.Transaction.FindAll()
 
+	if err != nil {
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error find all transaction",
+		}
+
+		response.ResponseError(w, res)
+
+		return
+	}
+
+	response.ResponseMessage(w, *res)
 }
 
-func (h *handler) FindByIdWithdraw(w http.ResponseWriter, r *http.Request) {
+func (h *handler) FindByIdTransaction(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		res := response.ErrorResponse{
 			Status:  "error",
@@ -50,7 +54,6 @@ func (h *handler) FindByIdWithdraw(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id, err := strconv.Atoi(r.URL.Query().Get("id"))
-
 	if err != nil {
 		res := response.ErrorResponse{
 			Status:  "error",
@@ -60,8 +63,7 @@ func (h *handler) FindByIdWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, errRes := h.services.Withdraw.FindById(id)
-
+	res, errRes := h.services.Transaction.FindById(id)
 	if errRes != nil {
 		response.ResponseError(w, *errRes)
 		return
@@ -70,7 +72,7 @@ func (h *handler) FindByIdWithdraw(w http.ResponseWriter, r *http.Request) {
 	response.ResponseMessage(w, *res)
 }
 
-func (h *handler) CreateWithdraw(w http.ResponseWriter, r *http.Request) {
+func (h *handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		res := response.ErrorResponse{
 			Status:  "error",
@@ -80,9 +82,9 @@ func (h *handler) CreateWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request requests.CreateWithdrawRequest
+	var createTransaction requests.CreateTransactionRequest
 
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&createTransaction); err != nil {
 		res := response.ErrorResponse{
 			Status:  "error",
 			Message: "Error invalid request",
@@ -91,7 +93,7 @@ func (h *handler) CreateWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := request.Validate(); err != nil {
+	if err := createTransaction.Validate(); err != nil {
 		res := response.ErrorResponse{
 			Status:  "error",
 			Message: "Error invalid validate request",
@@ -100,8 +102,7 @@ func (h *handler) CreateWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, errRes := h.services.Withdraw.Create(request)
-
+	res, errRes := h.services.Transaction.Create(createTransaction)
 	if errRes != nil {
 		response.ResponseError(w, *errRes)
 		return
@@ -110,7 +111,7 @@ func (h *handler) CreateWithdraw(w http.ResponseWriter, r *http.Request) {
 	response.ResponseMessage(w, *res)
 }
 
-func (h *handler) UpdateWithdraw(w http.ResponseWriter, r *http.Request) {
+func (h *handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		res := response.ErrorResponse{
 			Status:  "error",
@@ -120,22 +121,9 @@ func (h *handler) UpdateWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	var updateTransaction requests.UpdateTransactionRequest
 
-	if err != nil {
-		res := response.ErrorResponse{
-			Status:  "error",
-			Message: "Error convert id",
-		}
-		response.ResponseError(w, res)
-		return
-	}
-
-	var updateWithdraw requests.UpdateWithdrawRequest
-
-	updateWithdraw.WithdrawID = id
-
-	if err := json.NewDecoder(r.Body).Decode(&updateWithdraw); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&updateTransaction); err != nil {
 		res := response.ErrorResponse{
 			Status:  "error",
 			Message: "Error invalid request",
@@ -144,7 +132,7 @@ func (h *handler) UpdateWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := updateWithdraw.Validate(); err != nil {
+	if err := updateTransaction.Validate(); err != nil {
 		res := response.ErrorResponse{
 			Status:  "error",
 			Message: "Error invalid validate request",
@@ -153,8 +141,7 @@ func (h *handler) UpdateWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, errRes := h.services.Withdraw.Update(updateWithdraw)
-
+	res, errRes := h.services.Transaction.Update(updateTransaction)
 	if errRes != nil {
 		response.ResponseError(w, *errRes)
 		return
@@ -163,7 +150,7 @@ func (h *handler) UpdateWithdraw(w http.ResponseWriter, r *http.Request) {
 	response.ResponseMessage(w, *res)
 }
 
-func (h *handler) DeleteWithdraw(w http.ResponseWriter, r *http.Request) {
+func (h *handler) DeleteTransaction(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		res := response.ErrorResponse{
 			Status:  "error",
@@ -173,8 +160,8 @@ func (h *handler) DeleteWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
-
+	idStr := r.URL.Query().Get("id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		res := response.ErrorResponse{
 			Status:  "error",
@@ -184,8 +171,7 @@ func (h *handler) DeleteWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, errRes := h.services.Withdraw.Delete(id)
-
+	res, errRes := h.services.Transaction.Delete(id)
 	if errRes != nil {
 		response.ResponseError(w, *errRes)
 		return

@@ -8,13 +8,13 @@ import (
 )
 
 type CreateWithdrawRequest struct {
-	UserID         int       `json:"user_id" validate:"required,min=1"`
+	CardNumber     string    `json:"card_number" validate:"required,min=1"`
 	WithdrawAmount int       `json:"withdraw_amount" validate:"required,min=50000"`
 	WithdrawTime   time.Time `json:"withdraw_time" validate:"required"`
 }
 
 type UpdateWithdrawRequest struct {
-	UserID         int       `json:"user_id" validate:"required,min=1"`
+	CardNumber     string    `json:"card_number" validate:"required,min=1"`
 	WithdrawID     int       `json:"withdraw_id" validate:"required,min=1"`
 	WithdrawAmount int       `json:"withdraw_amount" validate:"required,min=50000"`
 	WithdrawTime   time.Time `json:"withdraw_time" validate:"required"`

@@ -41,6 +41,20 @@ func (ds *withdrawRepository) ReadAll() ([]*record.WithdrawRecord, error) {
 
 }
 
+func (ds *withdrawRepository) CountByDate(date string) (int, error) {
+	ds.mu.RLock()
+	defer ds.mu.RUnlock()
+
+	count := 0
+	for _, withdraw := range ds.withdraw {
+		if withdraw.WithdrawTime.Format("2006-01-02") == date {
+			count++
+		}
+	}
+
+	return count, nil
+}
+
 func (ds *withdrawRepository) Read(withdrawID int) (*record.WithdrawRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
@@ -54,46 +68,13 @@ func (ds *withdrawRepository) Read(withdrawID int) (*record.WithdrawRecord, erro
 	return ds.mapping.ToWithdrawRecord(withdraw), nil
 }
 
-func (ds *withdrawRepository) ReadByUserID(userID int) (*record.WithdrawRecord, error) {
-	ds.mu.RLock()
-	defer ds.mu.RUnlock()
-
-	withdraw, ok := ds.withdraw[userID]
-
-	if !ok {
-		return nil, fmt.Errorf("withdraw with ID %d not found", userID)
-	}
-
-	return ds.mapping.ToWithdrawRecord(withdraw), nil
-}
-
-func (ds *withdrawRepository) ReadByUsersID(userID int) ([]*record.WithdrawRecord, error) {
-	ds.mu.RLock()
-
-	defer ds.mu.RUnlock()
-
-	withdraws := []models.Withdraw{}
-
-	for _, withdraw := range ds.withdraw {
-		if withdraw.UserID == userID {
-			withdraws = append(withdraws, withdraw)
-		}
-	}
-
-	if len(withdraws) == 0 {
-		return nil, fmt.Errorf("no withdraws not found for user ID %d", userID)
-	}
-
-	return ds.mapping.ToWithdrawsRecord(withdraws), nil
-}
-
 func (ds *withdrawRepository) Create(request requests.CreateWithdrawRequest) (*record.WithdrawRecord, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
 	withdraw := models.Withdraw{
 		WithdrawID:     ds.nextID,
-		UserID:         request.UserID,
+		CardNumber:     request.CardNumber,
 		WithdrawAmount: request.WithdrawAmount,
 		WithdrawTime:   request.WithdrawTime,
 	}
@@ -116,7 +97,7 @@ func (ds *withdrawRepository) Update(request requests.UpdateWithdrawRequest) (*r
 		return nil, fmt.Errorf("withdraw with id %d not found", request.WithdrawID)
 	}
 
-	withdraw.UserID = request.UserID
+	withdraw.CardNumber = request.CardNumber
 	withdraw.WithdrawAmount = request.WithdrawAmount
 	withdraw.WithdrawTime = request.WithdrawTime
 

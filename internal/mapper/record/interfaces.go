@@ -29,3 +29,13 @@ type WithdrawRecordMapping interface {
 	ToWithdrawRecord(withdraw models.Withdraw) *record.WithdrawRecord
 	ToWithdrawsRecord(withdraws []models.Withdraw) []*record.WithdrawRecord
 }
+
+type CardRecordMapping interface {
+	ToCardRecord(card models.Card) *record.CardRecord
+	ToCardsRecord(cards []models.Card) []*record.CardRecord
+}
+
+type TransactionRecordMapping interface {
+	ToTransactionRecord(transaction models.Transaction) *record.TransactionRecord
+	ToTransactionsRecord(transactions []models.Transaction) []*record.TransactionRecord
+}

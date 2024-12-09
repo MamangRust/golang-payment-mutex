@@ -8,14 +8,14 @@ import (
 )
 
 type CreateTopupRequest struct {
-	UserID      int    `json:"user_id" validate:"required,min=1"`
+	CardNumber  string `json:"card_number" validate:"required,min=1"`
 	TopupNo     string `json:"topup_no" validate:"required"`
 	TopupAmount int    `json:"topup_amount" validate:"required,min=50000"`
 	TopupMethod string `json:"topup_method" validate:"required"`
 }
 
 type UpdateTopupRequest struct {
-	UserID      int    `json:"user_id" validate:"required,min=1"`
+	CardNumber  string `json:"card_number" validate:"required,min=1"`
 	TopupID     int    `json:"topup_id" validate:"required,min=1"`
 	TopupAmount int    `json:"topup_amount" validate:"required,min=50000"`
 	TopupMethod string `json:"topup_method" validate:"required"`
@@ -31,10 +31,6 @@ func (r *CreateTopupRequest) Validate() error {
 
 	if err := validate.Struct(r); err != nil {
 		return err
-	}
-
-	if r.UserID <= 0 {
-		return errors.New("user id must be a positive integer")
 	}
 
 	if r.TopupNo == "" {
@@ -61,10 +57,6 @@ func (r *UpdateTopupRequest) Validate() error {
 
 	if err := validate.Struct(r); err != nil {
 		return err
-	}
-
-	if r.UserID <= 0 {
-		return errors.New("user id must be a positive integer")
 	}
 
 	if r.TopupID <= 0 {

@@ -7,16 +7,16 @@ import (
 )
 
 type CreateTransferRequest struct {
-	TransferFrom   int `json:"transfer_from" validate:"required,min=1"`
-	TransferTo     int `json:"transfer_to" validate:"required,min=1"`
-	TransferAmount int `json:"transfer_amount" validate:"required,min=50000"`
+	TransferFrom   string `json:"transfer_from" validate:"required"`
+	TransferTo     string `json:"transfer_to" validate:"required,min=1"`
+	TransferAmount int    `json:"transfer_amount" validate:"required,min=50000"`
 }
 
 type UpdateTransferRequest struct {
-	TransferID     int `json:"transfer_id" validate:"required,min=1"`
-	TransferFrom   int `json:"transfer_from" validate:"required,min=1"`
-	TransferTo     int `json:"transfer_to" validate:"required,min=1"`
-	TransferAmount int `json:"transfer_amount" validate:"required,min=50000"`
+	TransferID     int    `json:"transfer_id" validate:"required,min=1"`
+	TransferFrom   string `json:"transfer_from" validate:"required"`
+	TransferTo     string `json:"transfer_to" validate:"required,min=1"`
+	TransferAmount int    `json:"transfer_amount" validate:"required,min=50000"`
 }
 
 type UpdateTransferAmountRequest struct {
@@ -28,14 +28,6 @@ func (r *CreateTransferRequest) Validate() error {
 	validate := validator.New()
 	if err := validate.Struct(r); err != nil {
 		return err
-	}
-
-	if r.TransferFrom <= 0 {
-		return errors.New("transfer from must be a positive integer")
-	}
-
-	if r.TransferTo <= 0 {
-		return errors.New("transfer to must be a positive integer")
 	}
 
 	if r.TransferAmount < 50000 {
@@ -53,14 +45,6 @@ func (r *UpdateTransferRequest) Validate() error {
 
 	if r.TransferID <= 0 {
 		return errors.New("transfer ID must be a positive integer")
-	}
-
-	if r.TransferFrom <= 0 {
-		return errors.New("transfer from must be a positive integer")
-	}
-
-	if r.TransferTo <= 0 {
-		return errors.New("transfer to must be a positive integer")
 	}
 
 	if r.TransferAmount < 50000 {

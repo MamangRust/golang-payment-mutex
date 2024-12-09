@@ -36,4 +36,7 @@ func (h *handler) InitApi(r *http.ServeMux) {
 	h.initTransferGroup("/transfer", r)
 	h.InitWithdrawGroup("/withdraw", r)
 	h.initUserGroup("/user", r)
+	h.initTransactionGroup("/transaction", r)
+	h.initCardGroup("/card", r)
+	h.initDashboardGroup("/dashboard", r)
 }

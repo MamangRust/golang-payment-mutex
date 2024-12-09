@@ -3,11 +3,13 @@ package repository
 import recordmapper "payment-mutex/internal/mapper/record"
 
 type Repositories struct {
-	User     UserRepository
-	Saldo    SaldoRepository
-	Topup    TopupRepository
-	Transfer TransferRepository
-	Withdraw WithdrawRepository
+	User        UserRepository
+	Saldo       SaldoRepository
+	Topup       TopupRepository
+	Transfer    TransferRepository
+	Withdraw    WithdrawRepository
+	Card        CardRepository
+	Transaction TransactionRepository
 }
 
 type Deps struct {
@@ -16,10 +18,12 @@ type Deps struct {
 
 func NewRepositorys(deps Deps) *Repositories {
 	return &Repositories{
-		User:     NewUserRepository(deps.MapperRecord.UserRecordMapper),
-		Saldo:    NewSaldoRepository(deps.MapperRecord.SaldoRecordMapper),
-		Topup:    NewTopupRepository(deps.MapperRecord.TopupRecordMapper),
-		Transfer: NewTransferRepository(deps.MapperRecord.TransferRecordMapper),
-		Withdraw: NewWithdrawRepository(deps.MapperRecord.WithdrawRecordMapper),
+		User:        NewUserRepository(deps.MapperRecord.UserRecordMapper),
+		Saldo:       NewSaldoRepository(deps.MapperRecord.SaldoRecordMapper),
+		Topup:       NewTopupRepository(deps.MapperRecord.TopupRecordMapper),
+		Transfer:    NewTransferRepository(deps.MapperRecord.TransferRecordMapper),
+		Withdraw:    NewWithdrawRepository(deps.MapperRecord.WithdrawRecordMapper),
+		Card:        NewCardRepository(deps.MapperRecord.CardRecordMapper),
+		Transaction: NewTransactionRepository(deps.MapperRecord.TransactionMapper),
 	}
 }

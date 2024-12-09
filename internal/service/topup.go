@@ -13,19 +13,19 @@ import (
 )
 
 type topupService struct {
-	userRepository  repository.UserRepository
+	cardRepository  repository.CardRepository
 	topupRepository repository.TopupRepository
 	saldoRepository repository.SaldoRepository
 	logger          logger.Logger
 }
 
 func NewTopupService(
-	userRepository repository.UserRepository,
+	cardRepository repository.CardRepository,
 	topupRepository repository.TopupRepository,
 	saldoRepository repository.SaldoRepository,
 	logger logger.Logger) *topupService {
 	return &topupService{
-		userRepository:  userRepository,
+		cardRepository:  cardRepository,
 		topupRepository: topupRepository,
 		saldoRepository: saldoRepository,
 		logger:          logger,
@@ -66,56 +66,13 @@ func (s *topupService) FindById(topupID int) (*response.ApiResponse[*record.Topu
 	}, nil
 }
 
-func (s *topupService) FindByUserID(userID int) (*response.ApiResponse[*record.TopupRecord], *response.ErrorResponse) {
-	res, err := s.topupRepository.ReadByUserID(userID)
-	if err != nil {
-		s.logger.Error("Failed to find top-up record by user ID", zap.Error(err))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve top-up record for the specified user.",
-		}
-	}
-
-	return &response.ApiResponse[*record.TopupRecord]{
-		Status:  "success",
-		Message: "Successfully retrieved top-up record for the user.",
-		Data:    res,
-	}, nil
-}
-
-func (s *topupService) FindByUsersID(userID int) (*response.ApiResponse[[]*record.TopupRecord], *response.ErrorResponse) {
-	_, err := s.userRepository.Read(userID)
-	if err != nil {
-		s.logger.Error("failed to find user by id", zap.Error(err))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "User not found",
-		}
-	}
-
-	topup, err := s.topupRepository.ReadByUsersID(userID)
-	if err != nil {
-		s.logger.Error("failed to find topup by user id", zap.Error(err))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "No topup records found for the given user",
-		}
-	}
-
-	return &response.ApiResponse[[]*record.TopupRecord]{
-		Status:  "success",
-		Message: "Successfully fetched topup records for user",
-		Data:    topup,
-	}, nil
-}
-
 func (s *topupService) Create(request requests.CreateTopupRequest) (*response.ApiResponse[*record.TopupRecord], *response.ErrorResponse) {
-	_, err := s.userRepository.Read(request.UserID)
+	_, err := s.cardRepository.ReadByCardNumber(request.CardNumber)
 	if err != nil {
-		s.logger.Error("failed to find user by id", zap.Error(err))
+		s.logger.Error("failed to find card by number", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "User not found",
+			Message: "Card not found",
 		}
 	}
 
@@ -130,7 +87,7 @@ func (s *topupService) Create(request requests.CreateTopupRequest) (*response.Ap
 	}
 
 	// Find current saldo
-	saldo, err := s.saldoRepository.ReadByUserID(request.UserID)
+	saldo, err := s.saldoRepository.ReadByCardNumber(request.CardNumber)
 	if err != nil {
 		s.logger.Error("failed to find saldo by user id", zap.Error(err))
 		return nil, &response.ErrorResponse{
@@ -141,7 +98,7 @@ func (s *topupService) Create(request requests.CreateTopupRequest) (*response.Ap
 
 	newBalance := saldo.TotalBalance + request.TopupAmount
 	_, err = s.saldoRepository.UpdateBalance(requests.UpdateSaldoBalance{
-		UserID:       request.UserID,
+		CardNumber:   request.CardNumber,
 		TotalBalance: newBalance,
 	})
 	if err != nil {
@@ -160,13 +117,12 @@ func (s *topupService) Create(request requests.CreateTopupRequest) (*response.Ap
 }
 
 func (s *topupService) Update(request requests.UpdateTopupRequest) (*response.ApiResponse[*record.TopupRecord], *response.ErrorResponse) {
-	// Check if the user exists
-	_, err := s.userRepository.Read(request.UserID)
+	_, err := s.cardRepository.ReadByCardNumber(request.CardNumber)
 	if err != nil {
-		s.logger.Error("Failed to find user by ID", zap.Error(err))
+		s.logger.Error("failed to find card by number", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "User not found",
+			Message: "Card not found",
 		}
 	}
 
@@ -196,7 +152,7 @@ func (s *topupService) Update(request requests.UpdateTopupRequest) (*response.Ap
 	}
 
 	// Retrieve the current balance from saldo
-	currentSaldo, err := s.saldoRepository.ReadByUserID(request.UserID)
+	currentSaldo, err := s.saldoRepository.ReadByCardNumber(request.CardNumber)
 	if err != nil {
 		s.logger.Error("Failed to retrieve current saldo", zap.Error(err))
 		return nil, &response.ErrorResponse{
@@ -206,17 +162,17 @@ func (s *topupService) Update(request requests.UpdateTopupRequest) (*response.Ap
 	}
 
 	if currentSaldo == nil {
-		s.logger.Error("No saldo found for user", zap.Int("userID", request.UserID))
+		s.logger.Error("No saldo found for card number", zap.String("card_number", request.CardNumber))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Saldo not found",
+			Message: "card not found",
 		}
 	}
 
 	newBalance := currentSaldo.TotalBalance + topupDifference
 
 	_, err = s.saldoRepository.UpdateBalance(requests.UpdateSaldoBalance{
-		UserID:       request.UserID,
+		CardNumber:   request.CardNumber,
 		TotalBalance: newBalance,
 	})
 

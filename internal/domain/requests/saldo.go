@@ -8,25 +8,25 @@ import (
 )
 
 type CreateSaldoRequest struct {
-	UserID       int `json:"user_id" validate:"required"`
-	TotalBalance int `json:"total_balance" validate:"required"`
+	CardNumber   string `json:"card_number" validate:"required"`
+	TotalBalance int    `json:"total_balance" validate:"required"`
 }
 
 type UpdateSaldoRequest struct {
 	SaldoID        int        `json:"saldo_id" validate:"required"`
-	UserID         int        `json:"user_id" validate:"required"`
+	CardNumber     string     `json:"card_number" validate:"required"`
 	TotalBalance   int        `json:"total_balance" validate:"required"`
 	WithdrawAmount *int       `json:"withdraw_amount" validate:"required_without=WithdrawTime"`
 	WithdrawTime   *time.Time `json:"withdraw_time" validate:"required_without=WithdrawAmount"`
 }
 
 type UpdateSaldoBalance struct {
-	UserID       int `json:"user_id" validate:"required,min=1"`
-	TotalBalance int `json:"total_balance" validate:"required,min=50000"`
+	CardNumber   string `json:"card_number" validate:"required,min=1"`
+	TotalBalance int    `json:"total_balance" validate:"required,min=50000"`
 }
 
 type UpdateSaldoWithdraw struct {
-	UserID         int        `json:"user_id" validate:"required,min=1"`
+	CardNumber     string     `json:"card_number" validate:"required,min=1"`
 	TotalBalance   int        `json:"total_balance" validate:"required,min=50000"`
 	WithdrawAmount *int       `json:"withdraw_amount" validate:"omitempty,gte=0"`
 	WithdrawTime   *time.Time `json:"withdraw_time" validate:"omitempty"`

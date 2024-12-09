@@ -15,7 +15,7 @@ func NewSaldoRecordMapper() *saldoRecordMapper {
 func (s *saldoRecordMapper) ToSaldoRecord(saldo models.Saldo) *record.SaldoRecord {
 	return &record.SaldoRecord{
 		SaldoID:        saldo.SaldoID,
-		UserID:         saldo.UserID,
+		CardNumber:     saldo.CardNumber,
 		TotalBalance:   saldo.TotalBalance,
 		WithdrawAmount: saldo.WithdrawAmount,
 		WithdrawTime:   saldo.WithdrawTime,

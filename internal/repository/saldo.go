@@ -47,30 +47,15 @@ func (ds *saldoRepository) Read(saldoID int) (*record.SaldoRecord, error) {
 	return ds.mapping.ToSaldoRecord(saldo), nil
 }
 
-func (ds *saldoRepository) ReadByUserID(userID int) (*record.SaldoRecord, error) {
+func (ds *saldoRepository) ReadByCardNumber(cardNumber string) (*record.SaldoRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 	for _, saldo := range ds.saldos {
-		if saldo.UserID == userID {
+		if saldo.CardNumber == cardNumber {
 			return ds.mapping.ToSaldoRecord(saldo), nil
 		}
 	}
-	return nil, fmt.Errorf("saldo for user ID %d not found", userID)
-}
-
-func (ds *saldoRepository) ReadByUsersID(userID int) ([]*record.SaldoRecord, error) {
-	ds.mu.RLock()
-	defer ds.mu.RUnlock()
-	var userSaldos []models.Saldo
-	for _, saldo := range ds.saldos {
-		if saldo.UserID == userID {
-			userSaldos = append(userSaldos, saldo)
-		}
-	}
-	if len(userSaldos) == 0 {
-		return nil, fmt.Errorf("no saldo found for user ID %d", userID)
-	}
-	return ds.mapping.ToSaldosRecord(userSaldos), nil
+	return nil, fmt.Errorf("saldo for user ID %s not found", cardNumber)
 }
 
 func (ds *saldoRepository) Create(request requests.CreateSaldoRequest) (*record.SaldoRecord, error) {
@@ -78,14 +63,14 @@ func (ds *saldoRepository) Create(request requests.CreateSaldoRequest) (*record.
 	defer ds.mu.Unlock()
 
 	for _, existingSaldo := range ds.saldos {
-		if existingSaldo.UserID == request.UserID {
-			return nil, fmt.Errorf("saldo for user ID %d already exists", request.UserID)
+		if existingSaldo.CardNumber == request.CardNumber {
+			return nil, fmt.Errorf("saldo for user ID %s already exists", request.CardNumber)
 		}
 	}
 
 	saldo := models.Saldo{
 		SaldoID:      ds.nextID,
-		UserID:       request.UserID,
+		CardNumber:   request.CardNumber,
 		TotalBalance: request.TotalBalance,
 	}
 
@@ -104,7 +89,7 @@ func (ds *saldoRepository) Update(request requests.UpdateSaldoRequest) (*record.
 		return nil, fmt.Errorf("saldo with ID %d not found", request.SaldoID)
 	}
 
-	saldo.UserID = request.UserID
+	saldo.CardNumber = request.CardNumber
 	saldo.TotalBalance = request.TotalBalance
 
 	if request.WithdrawAmount != nil {
@@ -124,7 +109,7 @@ func (ds *saldoRepository) UpdateBalance(request requests.UpdateSaldoBalance) (*
 	defer ds.mu.Unlock()
 
 	for id, saldo := range ds.saldos {
-		if saldo.UserID == request.UserID {
+		if saldo.CardNumber == request.CardNumber {
 			updatedSaldo := saldo
 			updatedSaldo.TotalBalance = request.TotalBalance
 
@@ -134,7 +119,7 @@ func (ds *saldoRepository) UpdateBalance(request requests.UpdateSaldoBalance) (*
 		}
 	}
 
-	return nil, fmt.Errorf("saldo for user ID %d not found", request.UserID)
+	return nil, fmt.Errorf("saldo for user ID %s not found", request.CardNumber)
 }
 
 func (ds *saldoRepository) UpdateSaldoWithdraw(request requests.UpdateSaldoWithdraw) (*record.SaldoRecord, error) {
@@ -142,7 +127,7 @@ func (ds *saldoRepository) UpdateSaldoWithdraw(request requests.UpdateSaldoWithd
 	defer ds.mu.Unlock()
 
 	for id, saldo := range ds.saldos {
-		if saldo.UserID == request.UserID {
+		if saldo.CardNumber == request.CardNumber {
 			updatedSaldo := saldo
 			if request.WithdrawAmount != nil {
 				if *request.WithdrawAmount > updatedSaldo.TotalBalance {
@@ -162,7 +147,7 @@ func (ds *saldoRepository) UpdateSaldoWithdraw(request requests.UpdateSaldoWithd
 		}
 	}
 
-	return nil, fmt.Errorf("saldo for user ID %d not found", request.UserID)
+	return nil, fmt.Errorf("saldo for user ID %s not found", request.CardNumber)
 }
 
 func (ds *saldoRepository) Delete(saldoID int) error {

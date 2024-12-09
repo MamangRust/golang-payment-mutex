@@ -43,6 +43,24 @@ func (ds *transferRepository) ReadAll() ([]*record.TransferRecord, error) {
 	return ds.mapping.ToTransfersRecord(transfers), nil
 }
 
+func (ds *transferRepository) CountByDate(date string) (int, error) {
+	ds.mu.RLock()
+	defer ds.mu.RUnlock()
+
+	count := 0
+	for _, transfer := range ds.transfers {
+		if transfer.TransferTime.Format("2006-01-02") == date {
+			count++
+		}
+	}
+
+	return count, nil
+}
+
+func (ds *transferRepository) CountAll() (int, error) {
+	return len(ds.transfers), nil
+}
+
 func (ds *transferRepository) Read(transferID int) (*record.TransferRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
@@ -51,39 +69,6 @@ func (ds *transferRepository) Read(transferID int) (*record.TransferRecord, erro
 
 	if !ok {
 		return nil, fmt.Errorf("transfer with ID %d not found", transferID)
-	}
-
-	return ds.mapping.ToTransferRecord(transfer), nil
-}
-
-func (ds *transferRepository) ReadByUsersID(userID int) ([]*record.TransferRecord, error) {
-	ds.mu.RLock()
-
-	defer ds.mu.RUnlock()
-
-	transfers := make([]models.Transfer, 0, len(ds.transfers))
-
-	for _, transfer := range ds.transfers {
-		if transfer.TransferFrom == userID || transfer.TransferTo == userID {
-			transfers = append(transfers, transfer)
-		}
-	}
-
-	if len(transfers) == 0 {
-		return nil, fmt.Errorf("not transfer not found for user id %d", userID)
-	}
-
-	return ds.mapping.ToTransfersRecord(transfers), nil
-}
-
-func (ds *transferRepository) ReadByUserID(userID int) (*record.TransferRecord, error) {
-	ds.mu.RLock()
-	defer ds.mu.RUnlock()
-
-	transfer, ok := ds.transfers[userID]
-
-	if !ok {
-		return nil, fmt.Errorf("transfer with ID %d not found", userID)
 	}
 
 	return ds.mapping.ToTransferRecord(transfer), nil

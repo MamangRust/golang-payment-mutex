@@ -9,26 +9,30 @@ import (
 	"strconv"
 )
 
-func (h *handler) InitWithdrawGroup(prefix string, r *http.ServeMux) {
-	r.Handle(prefix+"/find_all", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.FindAllWithdraw)))
-	r.Handle(prefix+"/find_by_id", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.FindByIdWithdraw)))
-	r.Handle(prefix+"/create", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.CreateWithdraw)))
-	r.Handle(prefix+"/update", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.UpdateWithdraw)))
-	r.Handle(prefix+"/delete", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.DeleteWithdraw)))
+func (h *handler) initCardGroup(prefix string, router *http.ServeMux) {
+	router.Handle(prefix+"/find_all", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.FindAllCard)))
+	router.Handle(prefix+"/find_by_id", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.FindByIdCard)))
+	router.Handle(prefix+"/create", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.CreateCard)))
+	router.Handle(prefix+"/update", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.UpdateCard)))
+	router.Handle(prefix+"/delete", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.DeleteCard)))
 }
 
-func (h *handler) FindAllWithdraw(w http.ResponseWriter, r *http.Request) {
+func (h *handler) FindAllCard(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
-		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Method Not Allowed",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
-	res, err := h.services.Withdraw.FindAll()
+	res, err := h.services.Card.FindAll()
 
 	if err != nil {
 		res := response.ErrorResponse{
 			Status:  "error",
-			Message: "Error find all saldo",
+			Message: "Error find all card",
 		}
 
 		response.ResponseError(w, res)
@@ -36,10 +40,9 @@ func (h *handler) FindAllWithdraw(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.ResponseMessage(w, *res)
-
 }
 
-func (h *handler) FindByIdWithdraw(w http.ResponseWriter, r *http.Request) {
+func (h *handler) FindByIdCard(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		res := response.ErrorResponse{
 			Status:  "error",
@@ -60,7 +63,7 @@ func (h *handler) FindByIdWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, errRes := h.services.Withdraw.FindById(id)
+	res, errRes := h.services.Card.FindById(id)
 
 	if errRes != nil {
 		response.ResponseError(w, *errRes)
@@ -70,7 +73,7 @@ func (h *handler) FindByIdWithdraw(w http.ResponseWriter, r *http.Request) {
 	response.ResponseMessage(w, *res)
 }
 
-func (h *handler) CreateWithdraw(w http.ResponseWriter, r *http.Request) {
+func (h *handler) CreateCard(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		res := response.ErrorResponse{
 			Status:  "error",
@@ -80,9 +83,9 @@ func (h *handler) CreateWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request requests.CreateWithdrawRequest
+	var createCard requests.CreateCardRequest
 
-	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&createCard); err != nil {
 		res := response.ErrorResponse{
 			Status:  "error",
 			Message: "Error invalid request",
@@ -91,7 +94,7 @@ func (h *handler) CreateWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := request.Validate(); err != nil {
+	if err := createCard.Validate(); err != nil {
 		res := response.ErrorResponse{
 			Status:  "error",
 			Message: "Error invalid validate request",
@@ -100,17 +103,21 @@ func (h *handler) CreateWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, errRes := h.services.Withdraw.Create(request)
+	res, err := h.services.Card.Create(createCard)
 
-	if errRes != nil {
-		response.ResponseError(w, *errRes)
+	if err != nil {
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error create card",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
 	response.ResponseMessage(w, *res)
 }
 
-func (h *handler) UpdateWithdraw(w http.ResponseWriter, r *http.Request) {
+func (h *handler) UpdateCard(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		res := response.ErrorResponse{
 			Status:  "error",
@@ -120,22 +127,9 @@ func (h *handler) UpdateWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	var updateCard requests.UpdateCardRequest
 
-	if err != nil {
-		res := response.ErrorResponse{
-			Status:  "error",
-			Message: "Error convert id",
-		}
-		response.ResponseError(w, res)
-		return
-	}
-
-	var updateWithdraw requests.UpdateWithdrawRequest
-
-	updateWithdraw.WithdrawID = id
-
-	if err := json.NewDecoder(r.Body).Decode(&updateWithdraw); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&updateCard); err != nil {
 		res := response.ErrorResponse{
 			Status:  "error",
 			Message: "Error invalid request",
@@ -144,7 +138,7 @@ func (h *handler) UpdateWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := updateWithdraw.Validate(); err != nil {
+	if err := updateCard.Validate(); err != nil {
 		res := response.ErrorResponse{
 			Status:  "error",
 			Message: "Error invalid validate request",
@@ -153,17 +147,21 @@ func (h *handler) UpdateWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, errRes := h.services.Withdraw.Update(updateWithdraw)
+	res, err := h.services.Card.Update(updateCard)
 
-	if errRes != nil {
-		response.ResponseError(w, *errRes)
+	if err != nil {
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Error update card",
+		}
+		response.ResponseError(w, res)
 		return
 	}
 
 	response.ResponseMessage(w, *res)
 }
 
-func (h *handler) DeleteWithdraw(w http.ResponseWriter, r *http.Request) {
+func (h *handler) DeleteCard(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodDelete {
 		res := response.ErrorResponse{
 			Status:  "error",
@@ -173,8 +171,8 @@ func (h *handler) DeleteWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := strconv.Atoi(r.URL.Query().Get("id"))
-
+	idStr := r.URL.Query().Get("id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		res := response.ErrorResponse{
 			Status:  "error",
@@ -184,7 +182,7 @@ func (h *handler) DeleteWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, errRes := h.services.Withdraw.Delete(id)
+	res, errRes := h.services.Card.Delete(id)
 
 	if errRes != nil {
 		response.ResponseError(w, *errRes)

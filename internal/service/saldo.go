@@ -12,17 +12,17 @@ import (
 )
 
 type saldoService struct {
-	userRepository  repository.UserRepository
+	cardRepository  repository.CardRepository
 	saldoRepository repository.SaldoRepository
 	logger          logger.Logger
 }
 
 func NewSaldoService(
-	userRepository repository.UserRepository,
+	cardRepository repository.CardRepository,
 	saldoRepository repository.SaldoRepository,
 	logger logger.Logger) *saldoService {
 	return &saldoService{
-		userRepository:  userRepository,
+		cardRepository:  cardRepository,
 		saldoRepository: saldoRepository,
 		logger:          logger,
 	}
@@ -62,55 +62,13 @@ func (s *saldoService) FindById(saldoID int) (*response.ApiResponse[*record.Sald
 	}, nil
 }
 
-func (s *saldoService) FindByUserID(userID int) (*response.ApiResponse[*record.SaldoRecord], *response.ErrorResponse) {
-	saldo, err := s.saldoRepository.ReadByUserID(userID)
-	if err != nil {
-		s.logger.Error("Failed to find saldo record by user ID", zap.Error(err))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to retrieve saldo for the specified user.",
-		}
-	}
-
-	if saldo == nil {
-		s.logger.Error("No saldo record found for user ID", zap.Int("userID", userID))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "No saldo record found for the specified user ID.",
-		}
-	}
-
-	return &response.ApiResponse[*record.SaldoRecord]{
-		Status:  "success",
-		Message: "Successfully retrieved saldo for the user.",
-		Data:    saldo,
-	}, nil
-}
-
-func (s *saldoService) FindByUsersID(userID int) (*response.ApiResponse[[]*record.SaldoRecord], *response.ErrorResponse) {
-	saldo, err := s.saldoRepository.ReadByUsersID(userID)
-	if err != nil {
-		s.logger.Error("failed find saldo by user id", zap.Error(err))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "No saldo records found for the given user",
-		}
-	}
-
-	return &response.ApiResponse[[]*record.SaldoRecord]{
-		Status:  "success",
-		Message: "Successfully fetched saldo records for user",
-		Data:    saldo,
-	}, nil
-}
-
 func (s *saldoService) Create(requests requests.CreateSaldoRequest) (*response.ApiResponse[*record.SaldoRecord], *response.ErrorResponse) {
-	_, err := s.userRepository.Read(requests.UserID)
+	_, err := s.cardRepository.ReadByCardNumber(requests.CardNumber)
 	if err != nil {
-		s.logger.Error("failed to find user", zap.Error(err))
+		s.logger.Error("failed to find card", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "User not found",
+			Message: "Card not found",
 		}
 	}
 
@@ -131,12 +89,12 @@ func (s *saldoService) Create(requests requests.CreateSaldoRequest) (*response.A
 }
 
 func (s *saldoService) Update(requests requests.UpdateSaldoRequest) (*response.ApiResponse[*record.SaldoRecord], *response.ErrorResponse) {
-	_, err := s.userRepository.Read(requests.UserID)
+	_, err := s.cardRepository.ReadByCardNumber(requests.CardNumber)
 	if err != nil {
-		s.logger.Error("failed to find user", zap.Error(err))
+		s.logger.Error("failed to find card", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "User not found",
+			Message: "Card not found",
 		}
 	}
 

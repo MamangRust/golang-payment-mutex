@@ -6,6 +6,8 @@ type RecordMapper struct {
 	TopupRecordMapper    TopupRecordMapping
 	TransferRecordMapper TransferRecordMapping
 	WithdrawRecordMapper WithdrawRecordMapping
+	CardRecordMapper     CardRecordMapping
+	TransactionMapper    TransactionRecordMapping
 }
 
 func NewRecordMapper() *RecordMapper {
@@ -15,5 +17,7 @@ func NewRecordMapper() *RecordMapper {
 		TopupRecordMapper:    NewTopupRecordMapper(),
 		TransferRecordMapper: NewTransferRecordMapper(),
 		WithdrawRecordMapper: NewWithdrawRecordMapper(),
+		CardRecordMapper:     NewCardRecordMapper(),
+		TransactionMapper:    NewTransactionRecordMapper(),
 	}
 }

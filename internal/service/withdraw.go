@@ -62,43 +62,8 @@ func (s *withdrawService) FindById(withdrawID int) (*response.ApiResponse[*recor
 	}, nil
 }
 
-func (s *withdrawService) FindByUserID(userID int) (*response.ApiResponse[*record.WithdrawRecord], *response.ErrorResponse) {
-	withdraw, err := s.withdrawRepository.ReadByUserID(userID)
-	if err != nil {
-		s.logger.Error("failed to find withdraw by user id", zap.Error(err))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch withdraw record for user.",
-		}
-	}
-
-	return &response.ApiResponse[*record.WithdrawRecord]{
-		Status:  "success",
-		Message: "Successfully retrieved withdraw record for user.",
-		Data:    withdraw,
-	}, nil
-}
-
-func (s *withdrawService) FindByUsersID(userID int) (*response.ApiResponse[[]*record.WithdrawRecord], *response.ErrorResponse) {
-	withdraws, err := s.withdrawRepository.ReadByUsersID(userID)
-	if err != nil {
-		s.logger.Error("failed to find withdraws by users id", zap.Error(err))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Failed to fetch withdraw records for users.",
-		}
-	}
-
-	return &response.ApiResponse[[]*record.WithdrawRecord]{
-		Status:  "success",
-		Message: "Successfully retrieved withdraw records for users.",
-		Data:    withdraws,
-	}, nil
-}
-
 func (s *withdrawService) Create(request requests.CreateWithdrawRequest) (*response.ApiResponse[*record.WithdrawRecord], *response.ErrorResponse) {
-	// Cek saldo pengguna
-	saldo, err := s.saldoRepository.ReadByUserID(request.UserID)
+	saldo, err := s.saldoRepository.ReadByCardNumber(request.CardNumber)
 	if err != nil {
 		s.logger.Error("Failed to find saldo by user ID", zap.Error(err))
 		return nil, &response.ErrorResponse{
@@ -108,7 +73,7 @@ func (s *withdrawService) Create(request requests.CreateWithdrawRequest) (*respo
 	}
 
 	if saldo == nil {
-		s.logger.Error("Saldo not found for user", zap.Int("userID", request.UserID))
+		s.logger.Error("Saldo not found for user", zap.String("cardNumber", request.CardNumber))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Saldo not found for the specified user ID.",
@@ -117,7 +82,7 @@ func (s *withdrawService) Create(request requests.CreateWithdrawRequest) (*respo
 
 	// Periksa saldo mencukupi
 	if saldo.TotalBalance < request.WithdrawAmount {
-		s.logger.Error("Insufficient balance for user", zap.Int("userID", request.UserID), zap.Int("requested", request.WithdrawAmount))
+		s.logger.Error("Insufficient balance for user", zap.String("cardNumber", request.CardNumber), zap.Int("requested", request.WithdrawAmount))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Insufficient balance for withdrawal.",
@@ -127,7 +92,7 @@ func (s *withdrawService) Create(request requests.CreateWithdrawRequest) (*respo
 	// Update saldo setelah penarikan
 	newTotalBalance := saldo.TotalBalance - request.WithdrawAmount
 	updateData := requests.UpdateSaldoWithdraw{
-		UserID:         request.UserID,
+		CardNumber:     request.CardNumber,
 		TotalBalance:   newTotalBalance,
 		WithdrawAmount: &request.WithdrawAmount,
 		WithdrawTime:   &request.WithdrawTime,
@@ -170,7 +135,7 @@ func (s *withdrawService) Update(request requests.UpdateWithdrawRequest) (*respo
 	}
 
 	// Ambil saldo pengguna
-	saldo, err := s.saldoRepository.ReadByUserID(request.UserID)
+	saldo, err := s.saldoRepository.ReadByCardNumber(request.CardNumber)
 	if err != nil {
 		s.logger.Error("Failed to fetch saldo by user ID", zap.Error(err))
 		return nil, &response.ErrorResponse{
@@ -180,7 +145,7 @@ func (s *withdrawService) Update(request requests.UpdateWithdrawRequest) (*respo
 	}
 
 	if saldo.TotalBalance < request.WithdrawAmount {
-		s.logger.Error("Insufficient balance for user", zap.Int("userID", request.UserID))
+		s.logger.Error("Insufficient balance for user", zap.String("cardNumber", request.CardNumber))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Insufficient balance for withdrawal update.",
@@ -190,7 +155,7 @@ func (s *withdrawService) Update(request requests.UpdateWithdrawRequest) (*respo
 	// Update saldo baru
 	newTotalBalance := saldo.TotalBalance - request.WithdrawAmount
 	updateSaldoData := requests.UpdateSaldoWithdraw{
-		UserID:         saldo.UserID,
+		CardNumber:     saldo.CardNumber,
 		TotalBalance:   newTotalBalance,
 		WithdrawAmount: &request.WithdrawAmount,
 		WithdrawTime:   &request.WithdrawTime,
@@ -208,7 +173,7 @@ func (s *withdrawService) Update(request requests.UpdateWithdrawRequest) (*respo
 	updatedWithdraw, err := s.withdrawRepository.Update(request)
 	if err != nil {
 		rollbackData := requests.UpdateSaldoBalance{
-			UserID:       saldo.UserID,
+			CardNumber:   saldo.CardNumber,
 			TotalBalance: saldo.TotalBalance,
 		}
 		_, rollbackErr := s.saldoRepository.UpdateBalance(rollbackData)

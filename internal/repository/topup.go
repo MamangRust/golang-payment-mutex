@@ -44,6 +44,21 @@ func (ds *topupRepository) ReadAll() ([]*record.TopupRecord, error) {
 	return ds.mapping.ToTopupRecords(topups), nil
 
 }
+
+func (ds *topupRepository) CountByDate(date string) (int, error) {
+	ds.mu.RLock()
+	defer ds.mu.RUnlock()
+
+	count := 0
+	for _, topup := range ds.topups {
+		if topup.TopupTime.Format("2006-01-02") == date {
+			count++
+		}
+	}
+
+	return count, nil
+}
+
 func (ds *topupRepository) Read(topupID int) (*record.TopupRecord, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
@@ -57,46 +72,13 @@ func (ds *topupRepository) Read(topupID int) (*record.TopupRecord, error) {
 	return ds.mapping.ToTopupRecord(topup), nil
 }
 
-func (ds *topupRepository) ReadByUserID(userID int) (*record.TopupRecord, error) {
-	ds.mu.RLock()
-	defer ds.mu.RUnlock()
-
-	topup, ok := ds.topups[userID]
-
-	if !ok {
-		return nil, fmt.Errorf("topup with ID %d not found", userID)
-	}
-
-	return ds.mapping.ToTopupRecord(topup), nil
-}
-
-func (ds *topupRepository) ReadByUsersID(userID int) ([]*record.TopupRecord, error) {
-	ds.mu.RLock()
-
-	defer ds.mu.RUnlock()
-
-	topups := []models.Topup{}
-
-	for _, topup := range ds.topups {
-		if topup.UserID == userID {
-			topups = append(topups, topup)
-		}
-	}
-
-	if len(topups) == 0 {
-		return nil, fmt.Errorf("no topups not found for user ID %d", userID)
-	}
-
-	return ds.mapping.ToTopupRecords(topups), nil
-}
-
 func (ds *topupRepository) Create(request requests.CreateTopupRequest) (*record.TopupRecord, error) {
 	ds.mu.Lock()
 	defer ds.mu.Unlock()
 
 	topup := models.Topup{
 		TopupID:     ds.nextID,
-		UserID:      request.UserID,
+		CardNumber:  request.CardNumber,
 		TopupNo:     request.TopupNo,
 		TopupAmount: request.TopupAmount,
 		TopupMethod: request.TopupMethod,
@@ -121,7 +103,7 @@ func (ds *topupRepository) Update(request requests.UpdateTopupRequest) (*record.
 
 	}
 
-	topup.UserID = request.UserID
+	topup.CardNumber = request.CardNumber
 	topup.TopupAmount = request.TopupAmount
 	topup.TopupMethod = request.TopupMethod
 	topup.TopupTime = time.Now()

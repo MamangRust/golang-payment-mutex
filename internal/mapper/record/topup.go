@@ -15,7 +15,7 @@ func NewTopupRecordMapper() *topupRecordMapper {
 func (t *topupRecordMapper) ToTopupRecord(topup models.Topup) *record.TopupRecord {
 	return &record.TopupRecord{
 		TopupID:     topup.TopupID,
-		UserID:      topup.UserID,
+		CardNumber:  topup.CardNumber,
 		TopupNo:     topup.TopupNo,
 		TopupAmount: topup.TopupAmount,
 		TopupMethod: topup.TopupMethod,
