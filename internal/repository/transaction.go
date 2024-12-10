@@ -83,6 +83,7 @@ func (ds *transactionRepository) Create(request requests.CreateTransactionReques
 		CardNumber:      request.CardNumber,
 		Amount:          request.Amount,
 		PaymentMethod:   request.PaymentMethod,
+		MerchantID:      *request.MerchantID,
 		TransactionTime: request.TransactionTime,
 	}
 
@@ -103,6 +104,7 @@ func (ds *transactionRepository) Update(request requests.UpdateTransactionReques
 
 	transaction.CardNumber = request.CardNumber
 	transaction.Amount = request.Amount
+	transaction.MerchantID = *request.MerchantID
 	transaction.PaymentMethod = request.PaymentMethod
 	transaction.TransactionTime = request.TransactionTime
 

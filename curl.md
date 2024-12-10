@@ -60,6 +60,98 @@ curl -X POST http://localhost:8080/auth/login \
 
 -----------------
 
+# Card
+
+## Card Sender
+
+### Get All
+
+```sh
+
+```
+
+
+
+### Get ID
+
+```sh
+```
+
+### Create
+```sh
+```
+
+### Update
+
+```sh
+
+```
+
+### Delete
+
+```sh
+
+```
+-----------------------------------
+
+## Card Receiver
+
+### Get All
+
+```sh
+```
+
+### Get ID
+
+```sh
+```
+
+### Create
+
+```sh
+```
+
+### Update
+
+```sh
+```
+
+### Delete
+
+```sh
+```
+
+----------------------------------
+
+# Merchant
+
+## Get All
+
+## Get ID
+
+## Create
+
+## Update
+
+## Delete
+
+
+---------------------------------
+
+# Transaction
+
+## Get All
+
+## Get ID
+
+## Create
+
+## Update
+
+## Delete
+
+
+-----------------------------------
 # Saldo
 
 
@@ -126,7 +218,7 @@ curl -X PUT http://localhost:8080/saldo/update/1 \
 curl -X DELETE http://localhost:8080/saldo/delete/1 \
 -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzIwNjM2NDAsImlhdCI6MTczMjA2MDA0MH0.A61IWywfRTetrqXTy9oBXGGdr5DBss-aU-1-SW46ZCw"
 ```
-
+-------------------
 
 
 
