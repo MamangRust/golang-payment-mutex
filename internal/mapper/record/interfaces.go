@@ -39,3 +39,8 @@ type TransactionRecordMapping interface {
 	ToTransactionRecord(transaction models.Transaction) *record.TransactionRecord
 	ToTransactionsRecord(transactions []models.Transaction) []*record.TransactionRecord
 }
+
+type MerchantRecordMapping interface {
+	ToMerchantRecord(merchant models.Merchant) *record.MerchantRecord
+	ToMerchantsRecord(merchants []models.Merchant) []*record.MerchantRecord
+}

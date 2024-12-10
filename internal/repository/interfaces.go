@@ -74,3 +74,13 @@ type TransactionRepository interface {
 	Update(request requests.UpdateTransactionRequest) (*record.TransactionRecord, error)
 	Delete(transactionID int) error
 }
+
+type MerchantRepository interface {
+	ReadAll() ([]*record.MerchantRecord, error)
+	Read(merchantID int) (*record.MerchantRecord, error)
+	ReadByName(name string) (*record.MerchantRecord, error)
+	ReadByApiKey(apiKey string) (*record.MerchantRecord, error)
+	Create(request requests.CreateMerchantRequest) (*record.MerchantRecord, error)
+	Update(request requests.UpdateMerchantRequest) (*record.MerchantRecord, error)
+	Delete(merchantID int) error
+}

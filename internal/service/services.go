@@ -18,6 +18,7 @@ type Services struct {
 	Card        CardService
 	Transaction TransactionService
 	Dashboard   DashboardService
+	Merchant    MerchantService
 }
 
 type Deps struct {
@@ -41,13 +42,20 @@ func NewServices(deps Deps) *Services {
 			deps.Logger,
 			deps.MapperResponse.TransferResponseMapper,
 		),
-		Withdraw:    NewWithdrawService(deps.Repository.User, deps.Repository.Withdraw, deps.Repository.Saldo, deps.Logger, deps.MapperResponse.WithdrawResponseMapper),
-		User:        NewUserService(deps.Repository.User, deps.Logger, deps.MapperResponse.UserResponseMapper),
-		Card:        NewCardService(deps.Repository.Card, deps.Repository.User, deps.Repository.Saldo, deps.Logger, deps.MapperResponse.CardResponseMapper),
-		Transaction: NewTransactionService(deps.Repository.Card, deps.Repository.Saldo, deps.Repository.Transaction, deps.Logger, deps.MapperResponse.TransactionResponseMapper),
+		Withdraw: NewWithdrawService(deps.Repository.User, deps.Repository.Withdraw, deps.Repository.Saldo, deps.Logger, deps.MapperResponse.WithdrawResponseMapper),
+		User:     NewUserService(deps.Repository.User, deps.Logger, deps.MapperResponse.UserResponseMapper),
+		Card:     NewCardService(deps.Repository.Card, deps.Repository.User, deps.Repository.Saldo, deps.Logger, deps.MapperResponse.CardResponseMapper),
+		Transaction: NewTransactionService(
+			deps.Repository.Merchant,
+			deps.Repository.Card, deps.Repository.Saldo, deps.Repository.Transaction, deps.Logger, deps.MapperResponse.TransactionResponseMapper),
 		Dashboard: NewDashboardService(
 			deps.Repository.Card, deps.Repository.Saldo, deps.Repository.Transaction, deps.Repository.Topup, deps.Repository.Withdraw, deps.Repository.Transaction,
 			deps.Logger,
+		),
+		Merchant: NewMerchantService(
+			deps.Repository.Merchant,
+			deps.Logger,
+			deps.MapperResponse.MerchantResponseMapper,
 		),
 	}
 }

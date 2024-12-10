@@ -12,6 +12,7 @@ import (
 )
 
 type transactionService struct {
+	merchantRepository    repository.MerchantRepository
 	cardRepository        repository.CardRepository
 	saldoRepository       repository.SaldoRepository
 	transactionRepository repository.TransactionRepository
@@ -20,6 +21,7 @@ type transactionService struct {
 }
 
 func NewTransactionService(
+	merchantRepository repository.MerchantRepository,
 	cardRepository repository.CardRepository,
 	saldoRepository repository.SaldoRepository,
 	transactionRepository repository.TransactionRepository,
@@ -27,6 +29,7 @@ func NewTransactionService(
 	mapper responseMapper.TransactionResponseMapper,
 ) *transactionService {
 	return &transactionService{
+		merchantRepository:    merchantRepository,
 		cardRepository:        cardRepository,
 		saldoRepository:       saldoRepository,
 		transactionRepository: transactionRepository,
@@ -73,7 +76,17 @@ func (s *transactionService) FindById(transactionID int) (*response.ApiResponse[
 	}, nil
 }
 
-func (s *transactionService) Create(request requests.CreateTransactionRequest) (*response.ApiResponse[*response.TransactionResponse], *response.ErrorResponse) {
+func (s *transactionService) Create(apiKey string, request requests.CreateTransactionRequest) (*response.ApiResponse[*response.TransactionResponse], *response.ErrorResponse) {
+	merchant, err := s.merchantRepository.ReadByApiKey(apiKey)
+
+	if err != nil {
+		s.logger.Error("failed to find merchant", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Merchant not found",
+		}
+	}
+
 	card, err := s.cardRepository.ReadByCardNumber(request.CardNumber)
 	if err != nil {
 		s.logger.Error("failed to find card", zap.Error(err))
@@ -117,6 +130,8 @@ func (s *transactionService) Create(request requests.CreateTransactionRequest) (
 		}
 	}
 
+	request.MerchantID = &merchant.MerchantID
+
 	// Buat transaksi
 	transaction, err := s.transactionRepository.Create(request)
 	if err != nil {
@@ -146,7 +161,17 @@ func (s *transactionService) Create(request requests.CreateTransactionRequest) (
 	}, nil
 }
 
-func (s *transactionService) Update(request requests.UpdateTransactionRequest) (*response.ApiResponse[*response.TransactionResponse], *response.ErrorResponse) {
+func (s *transactionService) Update(apiKey string, request requests.UpdateTransactionRequest) (*response.ApiResponse[*response.TransactionResponse], *response.ErrorResponse) {
+	merchant, err := s.merchantRepository.ReadByApiKey(apiKey)
+
+	if err != nil {
+		s.logger.Error("failed to find merchant", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Merchant not found",
+		}
+	}
+
 	card, err := s.cardRepository.ReadByCardNumber(request.CardNumber)
 	if err != nil {
 		s.logger.Error("failed to find card", zap.Error(err))
@@ -164,6 +189,8 @@ func (s *transactionService) Update(request requests.UpdateTransactionRequest) (
 			Message: "Saldo not found",
 		}
 	}
+
+	request.MerchantID = &merchant.MerchantID
 
 	// Perbarui transaksi
 	transaction, err := s.transactionRepository.Update(request)

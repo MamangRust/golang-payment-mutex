@@ -8,6 +8,7 @@ type ResponseMapper struct {
 	TopupResponseMapper       TopupResponseMapper
 	WithdrawResponseMapper    WithdrawResponseMapper
 	UserResponseMapper        UserResponseMapper
+	MerchantResponseMapper    MerchantResponseMapper
 }
 
 func NewResponseMapper() *ResponseMapper {
@@ -19,5 +20,6 @@ func NewResponseMapper() *ResponseMapper {
 		TopupResponseMapper:       NewTopupResponseMapper(),
 		WithdrawResponseMapper:    NewWithdrawResponseMapper(),
 		UserResponseMapper:        NewUserResponseMapper(),
+		MerchantResponseMapper:    NewMerchantResponseMapper(),
 	}
 }

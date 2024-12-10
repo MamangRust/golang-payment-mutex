@@ -12,8 +12,8 @@ import (
 func (h *handler) initTransactionGroup(prefix string, router *http.ServeMux) {
 	router.Handle(prefix+"/find_all", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.FindAllTransaction)))
 	router.Handle(prefix+"/find_by_id", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.FindByIdTransaction)))
-	router.Handle(prefix+"/create", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.CreateTransaction)))
-	router.Handle(prefix+"/update", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.UpdateTransaction)))
+	router.Handle(prefix+"/create", middleware.MiddlewareAuthAndCors(middleware.MerchantMiddleware(http.HandlerFunc(h.CreateTransaction), h.services.Merchant)))
+	router.Handle(prefix+"/update", middleware.MiddlewareAuthAndCors(middleware.MerchantMiddleware(http.HandlerFunc(h.UpdateTransaction), h.services.Merchant)))
 	router.Handle(prefix+"/delete", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.DeleteTransaction)))
 }
 
@@ -82,6 +82,17 @@ func (h *handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	apiKey, ok := r.Context().Value(middleware.ApiKeyKey{}).(string)
+
+	if !ok || apiKey == "" {
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Unauthorized",
+		}
+		response.ResponseError(w, res)
+		return
+	}
+
 	var createTransaction requests.CreateTransactionRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&createTransaction); err != nil {
@@ -102,7 +113,7 @@ func (h *handler) CreateTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, errRes := h.services.Transaction.Create(createTransaction)
+	res, errRes := h.services.Transaction.Create(apiKey, createTransaction)
 	if errRes != nil {
 		response.ResponseError(w, *errRes)
 		return
@@ -116,6 +127,16 @@ func (h *handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 		res := response.ErrorResponse{
 			Status:  "error",
 			Message: "Method Not Allowed",
+		}
+		response.ResponseError(w, res)
+		return
+	}
+
+	apiKey, ok := r.Context().Value(middleware.ApiKeyKey{}).(string)
+	if !ok || apiKey == "" {
+		res := response.ErrorResponse{
+			Status:  "error",
+			Message: "Unauthorized",
 		}
 		response.ResponseError(w, res)
 		return
@@ -141,7 +162,7 @@ func (h *handler) UpdateTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, errRes := h.services.Transaction.Update(updateTransaction)
+	res, errRes := h.services.Transaction.Update(apiKey, updateTransaction)
 	if errRes != nil {
 		response.ResponseError(w, *errRes)
 		return

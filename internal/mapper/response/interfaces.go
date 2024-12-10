@@ -39,3 +39,8 @@ type WithdrawResponseMapper interface {
 	ToWithdrawResponse(withdraw record.WithdrawRecord) *response.WithdrawResponse
 	ToWithdrawsResponse(withdraws []*record.WithdrawRecord) []*response.WithdrawResponse
 }
+
+type MerchantResponseMapper interface {
+	ToMerchantResponse(merchant record.MerchantRecord) *response.MerchantResponse
+	ToMerchantsResponse(merchants []*record.MerchantRecord) []*response.MerchantResponse
+}

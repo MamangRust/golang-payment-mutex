@@ -10,6 +10,7 @@ type Repositories struct {
 	Withdraw    WithdrawRepository
 	Card        CardRepository
 	Transaction TransactionRepository
+	Merchant    MerchantRepository
 }
 
 type Deps struct {
@@ -24,6 +25,7 @@ func NewRepositorys(deps Deps) *Repositories {
 		Transfer:    NewTransferRepository(deps.MapperRecord.TransferRecordMapper),
 		Withdraw:    NewWithdrawRepository(deps.MapperRecord.WithdrawRecordMapper),
 		Card:        NewCardRepository(deps.MapperRecord.CardRecordMapper),
-		Transaction: NewTransactionRepository(deps.MapperRecord.TransactionMapper),
+		Transaction: NewTransactionRepository(deps.MapperRecord.TransactionRecordMapper),
+		Merchant:    NewMerchantRepository(deps.MapperRecord.MerchantRecordMapper),
 	}
 }

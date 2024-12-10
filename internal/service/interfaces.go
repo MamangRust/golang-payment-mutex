@@ -61,11 +61,21 @@ type WithdrawService interface {
 type TransactionService interface {
 	FindAll() (*response.ApiResponse[[]*response.TransactionResponse], *response.ErrorResponse)
 	FindById(transactionID int) (*response.ApiResponse[*response.TransactionResponse], *response.ErrorResponse)
-	Create(requests requests.CreateTransactionRequest) (*response.ApiResponse[*response.TransactionResponse], *response.ErrorResponse)
-	Update(requests requests.UpdateTransactionRequest) (*response.ApiResponse[*response.TransactionResponse], *response.ErrorResponse)
+	Create(apikey string, requests requests.CreateTransactionRequest) (*response.ApiResponse[*response.TransactionResponse], *response.ErrorResponse)
+	Update(apikey string, requests requests.UpdateTransactionRequest) (*response.ApiResponse[*response.TransactionResponse], *response.ErrorResponse)
 	Delete(transactionID int) (*response.ApiResponse[string], *response.ErrorResponse)
 }
 
 type DashboardService interface {
 	GetGlobalOverview() (*response.ApiResponse[*response.OverviewData], *response.ErrorResponse)
+}
+
+type MerchantService interface {
+	FindAll() (*response.ApiResponse[[]*response.MerchantResponse], *response.ErrorResponse)
+	FindByName(name string) (*response.ApiResponse[*response.MerchantResponse], *response.ErrorResponse)
+	FindByApiKey(apiKey string) (*response.ApiResponse[*response.MerchantResponse], *response.ErrorResponse)
+	FindByID(merchantID int) (*response.ApiResponse[*response.MerchantResponse], *response.ErrorResponse)
+	Create(requests requests.CreateMerchantRequest) (*response.ApiResponse[*response.MerchantResponse], *response.ErrorResponse)
+	Update(requests requests.UpdateMerchantRequest) (*response.ApiResponse[*response.MerchantResponse], *response.ErrorResponse)
+	Delete(merchantID int) (*response.ApiResponse[string], *response.ErrorResponse)
 }

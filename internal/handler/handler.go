@@ -38,5 +38,6 @@ func (h *handler) InitApi(r *http.ServeMux) {
 	h.initUserGroup("/user", r)
 	h.initTransactionGroup("/transaction", r)
 	h.initCardGroup("/card", r)
+	h.InitMerchantGroup("/merchant", r)
 	h.initDashboardGroup("/dashboard", r)
 }
