@@ -1,9 +1,9 @@
 package service
 
 import (
-	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
 	"payment-mutex/internal/domain/response"
+	responseMapper "payment-mutex/internal/mapper/response"
 	"payment-mutex/internal/repository"
 	"payment-mutex/pkg/auth"
 	"payment-mutex/pkg/hash"
@@ -17,18 +17,20 @@ type authService struct {
 	repository repository.UserRepository
 	token      auth.TokenManager
 	logger     logger.Logger
+	mapper     responseMapper.UserResponseMapper
 }
 
-func NewAuthService(hash hash.Hashing, repository repository.UserRepository, token auth.TokenManager, logger logger.Logger) *authService {
+func NewAuthService(hash hash.Hashing, repository repository.UserRepository, token auth.TokenManager, logger logger.Logger, mapper responseMapper.UserResponseMapper) *authService {
 	return &authService{
 		hash:       hash,
 		repository: repository,
 		token:      token,
 		logger:     logger,
+		mapper:     mapper,
 	}
 }
 
-func (s *authService) RegisterUser(request *requests.RegisterRequest) (*response.ApiResponse[record.UserRecord], *response.ErrorResponse) {
+func (s *authService) RegisterUser(request *requests.RegisterRequest) (*response.ApiResponse[response.UserResponse], *response.ErrorResponse) {
 	hashing, err := s.hash.HashPassword(request.Password)
 
 	if err != nil {
@@ -53,11 +55,12 @@ func (s *authService) RegisterUser(request *requests.RegisterRequest) (*response
 			Message: "Error creating user",
 		}
 	}
+	so := s.mapper.ToUserResponse(*res)
 
-	return &response.ApiResponse[record.UserRecord]{
+	return &response.ApiResponse[response.UserResponse]{
 		Status:  "success",
 		Message: "register success",
-		Data:    *res,
+		Data:    *so,
 	}, nil
 }
 

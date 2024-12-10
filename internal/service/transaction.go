@@ -2,9 +2,9 @@ package service
 
 import (
 	"fmt"
-	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
 	"payment-mutex/internal/domain/response"
+	responseMapper "payment-mutex/internal/mapper/response"
 	"payment-mutex/internal/repository"
 	"payment-mutex/pkg/logger"
 
@@ -16,6 +16,7 @@ type transactionService struct {
 	saldoRepository       repository.SaldoRepository
 	transactionRepository repository.TransactionRepository
 	logger                logger.Logger
+	mapper                responseMapper.TransactionResponseMapper
 }
 
 func NewTransactionService(
@@ -23,16 +24,18 @@ func NewTransactionService(
 	saldoRepository repository.SaldoRepository,
 	transactionRepository repository.TransactionRepository,
 	logger logger.Logger,
+	mapper responseMapper.TransactionResponseMapper,
 ) *transactionService {
 	return &transactionService{
 		cardRepository:        cardRepository,
 		saldoRepository:       saldoRepository,
 		transactionRepository: transactionRepository,
 		logger:                logger,
+		mapper:                mapper,
 	}
 }
 
-func (s *transactionService) FindAll() (*response.ApiResponse[[]*record.TransactionRecord], *response.ErrorResponse) {
+func (s *transactionService) FindAll() (*response.ApiResponse[[]*response.TransactionResponse], *response.ErrorResponse) {
 	transactions, err := s.transactionRepository.ReadAll()
 	if err != nil {
 		s.logger.Error("failed to find transaction", zap.Error(err))
@@ -41,14 +44,17 @@ func (s *transactionService) FindAll() (*response.ApiResponse[[]*record.Transact
 			Message: "Transaction not found",
 		}
 	}
-	return &response.ApiResponse[[]*record.TransactionRecord]{
+
+	so := s.mapper.ToTransactionsResponse(transactions)
+
+	return &response.ApiResponse[[]*response.TransactionResponse]{
 		Status:  "success",
 		Message: "Transaction found",
-		Data:    transactions,
+		Data:    so,
 	}, nil
 }
 
-func (s *transactionService) FindById(transactionID int) (*response.ApiResponse[*record.TransactionRecord], *response.ErrorResponse) {
+func (s *transactionService) FindById(transactionID int) (*response.ApiResponse[*response.TransactionResponse], *response.ErrorResponse) {
 	transaction, err := s.transactionRepository.Read(transactionID)
 	if err != nil {
 		s.logger.Error("failed to find transaction", zap.Error(err))
@@ -57,14 +63,17 @@ func (s *transactionService) FindById(transactionID int) (*response.ApiResponse[
 			Message: "Transaction not found",
 		}
 	}
-	return &response.ApiResponse[*record.TransactionRecord]{
+
+	so := s.mapper.ToTransactionResponse(*transaction)
+
+	return &response.ApiResponse[*response.TransactionResponse]{
 		Status:  "success",
 		Message: "Transaction found",
-		Data:    transaction,
+		Data:    so,
 	}, nil
 }
 
-func (s *transactionService) Create(request requests.CreateTransactionRequest) (*response.ApiResponse[*record.TransactionRecord], *response.ErrorResponse) {
+func (s *transactionService) Create(request requests.CreateTransactionRequest) (*response.ApiResponse[*response.TransactionResponse], *response.ErrorResponse) {
 	card, err := s.cardRepository.ReadByCardNumber(request.CardNumber)
 	if err != nil {
 		s.logger.Error("failed to find card", zap.Error(err))
@@ -128,14 +137,16 @@ func (s *transactionService) Create(request requests.CreateTransactionRequest) (
 		}
 	}
 
-	return &response.ApiResponse[*record.TransactionRecord]{
+	so := s.mapper.ToTransactionResponse(*transaction)
+
+	return &response.ApiResponse[*response.TransactionResponse]{
 		Status:  "success",
 		Message: "Transaction created successfully",
-		Data:    transaction,
+		Data:    so,
 	}, nil
 }
 
-func (s *transactionService) Update(request requests.UpdateTransactionRequest) (*response.ApiResponse[*record.TransactionRecord], *response.ErrorResponse) {
+func (s *transactionService) Update(request requests.UpdateTransactionRequest) (*response.ApiResponse[*response.TransactionResponse], *response.ErrorResponse) {
 	card, err := s.cardRepository.ReadByCardNumber(request.CardNumber)
 	if err != nil {
 		s.logger.Error("failed to find card", zap.Error(err))
@@ -181,10 +192,12 @@ func (s *transactionService) Update(request requests.UpdateTransactionRequest) (
 		}
 	}
 
-	return &response.ApiResponse[*record.TransactionRecord]{
+	so := s.mapper.ToTransactionResponse(*transaction)
+
+	return &response.ApiResponse[*response.TransactionResponse]{
 		Status:  "success",
 		Message: "Transaction updated successfully",
-		Data:    transaction,
+		Data:    so,
 	}, nil
 }
 

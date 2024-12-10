@@ -20,12 +20,11 @@ func (u *userRecordMapper) ToUserRecord(user models.User) *record.UserRecord {
 	}
 
 	return &record.UserRecord{
-		UserID:      user.UserID,
-		FirstName:   user.FirstName,
-		LastName:    user.LastName,
-		Email:       user.Email,
-		Password:    password,
-		NocTransfer: user.NocTransfer,
+		UserID:    user.UserID,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Email:     user.Email,
+		Password:  password,
 	}
 }
 

@@ -1,9 +1,9 @@
 package service
 
 import (
-	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
 	"payment-mutex/internal/domain/response"
+	responseMapper "payment-mutex/internal/mapper/response"
 	"payment-mutex/internal/repository"
 	"payment-mutex/pkg/logger"
 
@@ -13,19 +13,22 @@ import (
 type userService struct {
 	userRepository repository.UserRepository
 	logger         logger.Logger
+	mapper         responseMapper.UserResponseMapper
 }
 
 func NewUserService(
 	userRepository repository.UserRepository,
 	logger logger.Logger,
+	mapper responseMapper.UserResponseMapper,
 ) *userService {
 	return &userService{
 		userRepository: userRepository,
 		logger:         logger,
+		mapper:         mapper,
 	}
 }
 
-func (ds *userService) FindAll() (*response.ApiResponse[[]*record.UserRecord], *response.ErrorResponse) {
+func (ds *userService) FindAll() (*response.ApiResponse[[]*response.UserResponse], *response.ErrorResponse) {
 	users, err := ds.userRepository.ReadAll()
 	if err != nil {
 		ds.logger.Error("failed to find all users", zap.Error(err))
@@ -35,14 +38,16 @@ func (ds *userService) FindAll() (*response.ApiResponse[[]*record.UserRecord], *
 		}
 	}
 
-	return &response.ApiResponse[[]*record.UserRecord]{
+	so := ds.mapper.ToUsersResponse(users)
+
+	return &response.ApiResponse[[]*response.UserResponse]{
 		Status:  "success",
 		Message: "Users retrieved successfully",
-		Data:    users,
+		Data:    so,
 	}, nil
 }
 
-func (ds *userService) FindByID(id int) (*response.ApiResponse[record.UserRecord], *response.ErrorResponse) {
+func (ds *userService) FindByID(id int) (*response.ApiResponse[*response.UserResponse], *response.ErrorResponse) {
 	user, err := ds.userRepository.Read(id)
 	if err != nil {
 		ds.logger.Error("failed to find user by ID", zap.Error(err))
@@ -52,14 +57,16 @@ func (ds *userService) FindByID(id int) (*response.ApiResponse[record.UserRecord
 		}
 	}
 
-	return &response.ApiResponse[record.UserRecord]{
+	so := ds.mapper.ToUserResponse(*user)
+
+	return &response.ApiResponse[*response.UserResponse]{
 		Status:  "success",
 		Message: "User retrieved successfully",
-		Data:    *user,
+		Data:    so,
 	}, nil
 }
 
-func (ds *userService) Create(request requests.CreateUserRequest) (*response.ApiResponse[record.UserRecord], *response.ErrorResponse) {
+func (ds *userService) Create(request requests.CreateUserRequest) (*response.ApiResponse[*response.UserResponse], *response.ErrorResponse) {
 	existingUser, err := ds.userRepository.ReadByEmail(request.Email)
 	if existingUser != nil {
 		ds.logger.Error("user already exists with the given email", zap.Error(err))
@@ -78,16 +85,16 @@ func (ds *userService) Create(request requests.CreateUserRequest) (*response.Api
 		}
 	}
 
-	res.Password = nil
+	so := ds.mapper.ToUserResponse(*res)
 
-	return &response.ApiResponse[record.UserRecord]{
+	return &response.ApiResponse[*response.UserResponse]{
 		Status:  "success",
 		Message: "User created successfully",
-		Data:    *res,
+		Data:    so,
 	}, nil
 }
 
-func (ds *userService) Update(request requests.UpdateUserRequest) (*response.ApiResponse[record.UserRecord], *response.ErrorResponse) {
+func (ds *userService) Update(request requests.UpdateUserRequest) (*response.ApiResponse[*response.UserResponse], *response.ErrorResponse) {
 	existingUser, err := ds.userRepository.ReadByEmail(request.Email)
 	if existingUser == nil {
 		ds.logger.Error("user not found with the given email", zap.Error(err))
@@ -106,12 +113,12 @@ func (ds *userService) Update(request requests.UpdateUserRequest) (*response.Api
 		}
 	}
 
-	res.Password = nil
+	so := ds.mapper.ToUserResponse(*res)
 
-	return &response.ApiResponse[record.UserRecord]{
+	return &response.ApiResponse[*response.UserResponse]{
 		Status:  "success",
 		Message: "User updated successfully",
-		Data:    *res,
+		Data:    so,
 	}, nil
 }
 

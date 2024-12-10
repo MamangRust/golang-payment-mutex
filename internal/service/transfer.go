@@ -2,9 +2,9 @@ package service
 
 import (
 	"fmt"
-	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
 	"payment-mutex/internal/domain/response"
+	responseMapper "payment-mutex/internal/mapper/response"
 	"payment-mutex/internal/repository"
 	"payment-mutex/pkg/logger"
 
@@ -17,22 +17,24 @@ type transferService struct {
 	saldoRepository    repository.SaldoRepository
 	transferRepository repository.TransferRepository
 	logger             logger.Logger
+	mapper             responseMapper.TransferResponseMapper
 }
 
 func NewTransferService(
 	userRepository repository.UserRepository,
 	cardRepository repository.CardRepository,
 	transferRepository repository.TransferRepository,
-	saldoRepository repository.SaldoRepository, logger logger.Logger) *transferService {
+	saldoRepository repository.SaldoRepository, logger logger.Logger, mapper responseMapper.TransferResponseMapper) *transferService {
 	return &transferService{
 		userRepository:     userRepository,
 		transferRepository: transferRepository,
 		saldoRepository:    saldoRepository,
 		logger:             logger,
+		mapper:             mapper,
 	}
 }
 
-func (s *transferService) FindAll() (*response.ApiResponse[[]*record.TransferRecord], *response.ErrorResponse) {
+func (s *transferService) FindAll() (*response.ApiResponse[[]*response.TransferResponse], *response.ErrorResponse) {
 	transfer, err := s.transferRepository.ReadAll()
 	if err != nil {
 		s.logger.Error("failed to find all transfers", zap.Error(err))
@@ -42,14 +44,16 @@ func (s *transferService) FindAll() (*response.ApiResponse[[]*record.TransferRec
 		}
 	}
 
-	return &response.ApiResponse[[]*record.TransferRecord]{
+	so := s.mapper.ToTransfersResponse(transfer)
+
+	return &response.ApiResponse[[]*response.TransferResponse]{
 		Status:  "success",
 		Message: "Transfers retrieved successfully",
-		Data:    transfer,
+		Data:    so,
 	}, nil
 }
 
-func (s *transferService) FindById(transferID int) (*response.ApiResponse[*record.TransferRecord], *response.ErrorResponse) {
+func (s *transferService) FindById(transferID int) (*response.ApiResponse[*response.TransferResponse], *response.ErrorResponse) {
 	transfer, err := s.transferRepository.Read(transferID)
 	if err != nil {
 		s.logger.Error("failed to find transfer by ID", zap.Error(err))
@@ -59,14 +63,16 @@ func (s *transferService) FindById(transferID int) (*response.ApiResponse[*recor
 		}
 	}
 
-	return &response.ApiResponse[*record.TransferRecord]{
+	so := s.mapper.ToTransferResponse(*transfer)
+
+	return &response.ApiResponse[*response.TransferResponse]{
 		Status:  "success",
 		Message: "Transfer retrieved successfully",
-		Data:    transfer,
+		Data:    so,
 	}, nil
 }
 
-func (s *transferService) Create(request requests.CreateTransferRequest) (*response.ApiResponse[*record.TransferRecord], *response.ErrorResponse) {
+func (s *transferService) Create(request requests.CreateTransferRequest) (*response.ApiResponse[*response.TransferResponse], *response.ErrorResponse) {
 	_, err := s.cardRepository.ReadByCardNumber(request.TransferFrom)
 	if err != nil {
 		s.logger.Error("failed to find sender card by Number", zap.Error(err))
@@ -146,14 +152,16 @@ func (s *transferService) Create(request requests.CreateTransferRequest) (*respo
 		}
 	}
 
-	return &response.ApiResponse[*record.TransferRecord]{
+	so := s.mapper.ToTransferResponse(*transfer)
+
+	return &response.ApiResponse[*response.TransferResponse]{
 		Status:  "success",
 		Message: "Transfer created successfully",
-		Data:    transfer,
+		Data:    so,
 	}, nil
 }
 
-func (s *transferService) Update(request requests.UpdateTransferRequest) (*response.ApiResponse[*record.TransferRecord], *response.ErrorResponse) {
+func (s *transferService) Update(request requests.UpdateTransferRequest) (*response.ApiResponse[*response.TransferResponse], *response.ErrorResponse) {
 	// Retrieve the existing transfer
 	transfer, err := s.transferRepository.Read(request.TransferID)
 	if err != nil {
@@ -273,11 +281,13 @@ func (s *transferService) Update(request requests.UpdateTransferRequest) (*respo
 		}
 	}
 
+	so := s.mapper.ToTransferResponse(*updatedTransfer)
+
 	// Return the updated transfer in a successful response
-	return &response.ApiResponse[*record.TransferRecord]{
+	return &response.ApiResponse[*response.TransferResponse]{
 		Status:  "success",
 		Message: "Transfer successfully updated.",
-		Data:    updatedTransfer,
+		Data:    so,
 	}, nil
 }
 

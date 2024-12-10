@@ -1,9 +1,9 @@
 package service
 
 import (
-	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
 	"payment-mutex/internal/domain/response"
+	responseMapper "payment-mutex/internal/mapper/response"
 	"payment-mutex/internal/repository"
 	"payment-mutex/pkg/logger"
 	"strconv"
@@ -15,24 +15,28 @@ type cardService struct {
 	cardRepository  repository.CardRepository
 	userRepository  repository.UserRepository
 	saldoRepostiroy repository.SaldoRepository
-
-	logger logger.Logger
+	logger          logger.Logger
+	mapper          responseMapper.CardResponseMapper
 }
 
 func NewCardService(
 	cardRepository repository.CardRepository,
 	userRepository repository.UserRepository,
 	saldoRepostiroy repository.SaldoRepository,
-	logger logger.Logger) *cardService {
+	logger logger.Logger,
+	mapper responseMapper.CardResponseMapper,
+
+) *cardService {
 	return &cardService{
 		cardRepository:  cardRepository,
 		userRepository:  userRepository,
 		saldoRepostiroy: saldoRepostiroy,
 		logger:          logger,
+		mapper:          mapper,
 	}
 }
 
-func (s *cardService) FindAll() (*response.ApiResponse[[]*record.CardRecord], *response.ErrorResponse) {
+func (s *cardService) FindAll() (*response.ApiResponse[[]*response.CardResponse], *response.ErrorResponse) {
 	card, err := s.cardRepository.ReadAll()
 
 	if err != nil {
@@ -43,14 +47,16 @@ func (s *cardService) FindAll() (*response.ApiResponse[[]*record.CardRecord], *r
 		}
 	}
 
-	return &response.ApiResponse[[]*record.CardRecord]{
+	so := s.mapper.ToCardsResponse(card)
+
+	return &response.ApiResponse[[]*response.CardResponse]{
 		Status:  "success",
 		Message: "Successfully fetched all card records",
-		Data:    card,
+		Data:    so,
 	}, nil
 }
 
-func (s *cardService) FindById(cardID int) (*response.ApiResponse[*record.CardRecord], *response.ErrorResponse) {
+func (s *cardService) FindById(cardID int) (*response.ApiResponse[*response.CardResponse], *response.ErrorResponse) {
 	card, err := s.cardRepository.Read(cardID)
 	if err != nil {
 		s.logger.Error("failed find card by id", zap.Error(err))
@@ -59,15 +65,16 @@ func (s *cardService) FindById(cardID int) (*response.ApiResponse[*record.CardRe
 			Message: "Card not found",
 		}
 	}
+	so := s.mapper.ToCardResponse(*card)
 
-	return &response.ApiResponse[*record.CardRecord]{
+	return &response.ApiResponse[*response.CardResponse]{
 		Status:  "success",
 		Message: "Successfully fetched card record",
-		Data:    card,
+		Data:    so,
 	}, nil
 }
 
-func (s *cardService) FindByUserID(userID int) (*response.ApiResponse[*record.CardRecord], *response.ErrorResponse) {
+func (s *cardService) FindByUserID(userID int) (*response.ApiResponse[*response.CardResponse], *response.ErrorResponse) {
 	card, err := s.cardRepository.ReadByUserID(userID)
 	if err != nil {
 		s.logger.Error("failed find card by user id", zap.Error(err))
@@ -85,15 +92,16 @@ func (s *cardService) FindByUserID(userID int) (*response.ApiResponse[*record.Ca
 			Message: "Card not found",
 		}
 	}
+	so := s.mapper.ToCardResponse(*card)
 
-	return &response.ApiResponse[*record.CardRecord]{
+	return &response.ApiResponse[*response.CardResponse]{
 		Status:  "success",
 		Message: "Successfully fetched card record",
-		Data:    card,
+		Data:    so,
 	}, nil
 }
 
-func (s *cardService) FindByCardNumber(cardNumber string) (*response.ApiResponse[*record.CardRecord], *response.ErrorResponse) {
+func (s *cardService) FindByCardNumber(cardNumber string) (*response.ApiResponse[*response.CardResponse], *response.ErrorResponse) {
 	card, err := s.cardRepository.ReadByCardNumber(cardNumber)
 
 	if err != nil {
@@ -104,15 +112,17 @@ func (s *cardService) FindByCardNumber(cardNumber string) (*response.ApiResponse
 		}
 	}
 
-	return &response.ApiResponse[*record.CardRecord]{
+	so := s.mapper.ToCardResponse(*card)
+
+	return &response.ApiResponse[*response.CardResponse]{
 		Status:  "success",
 		Message: "Successfully fetched card record",
-		Data:    card,
+		Data:    so,
 	}, nil
 
 }
 
-func (s *cardService) FindByUsersID(userID int) (*response.ApiResponse[[]*record.CardRecord], *response.ErrorResponse) {
+func (s *cardService) FindByUsersID(userID int) (*response.ApiResponse[[]*response.CardResponse], *response.ErrorResponse) {
 	cards, err := s.cardRepository.ReadByUsersID(userID)
 
 	if err != nil {
@@ -123,15 +133,16 @@ func (s *cardService) FindByUsersID(userID int) (*response.ApiResponse[[]*record
 			Message: "Card not found",
 		}
 	}
+	so := s.mapper.ToCardsResponse(cards)
 
-	return &response.ApiResponse[[]*record.CardRecord]{
+	return &response.ApiResponse[[]*response.CardResponse]{
 		Status:  "success",
 		Message: "Successfully fetched card record",
-		Data:    cards,
+		Data:    so,
 	}, nil
 }
 
-func (s *cardService) Create(request requests.CreateCardRequest) (*response.ApiResponse[*record.CardRecord], *response.ErrorResponse) {
+func (s *cardService) Create(request requests.CreateCardRequest) (*response.ApiResponse[*response.CardResponse], *response.ErrorResponse) {
 	_, err := s.userRepository.Read(request.UserID)
 	if err != nil {
 		s.logger.Error("failed to find user", zap.Error(err))
@@ -151,14 +162,16 @@ func (s *cardService) Create(request requests.CreateCardRequest) (*response.ApiR
 		}
 	}
 
-	return &response.ApiResponse[*record.CardRecord]{
+	so := s.mapper.ToCardResponse(*card)
+
+	return &response.ApiResponse[*response.CardResponse]{
 		Status:  "success",
 		Message: "Card record created successfully",
-		Data:    card,
+		Data:    so,
 	}, nil
 }
 
-func (s *cardService) Update(request requests.UpdateCardRequest) (*response.ApiResponse[*record.CardRecord], *response.ErrorResponse) {
+func (s *cardService) Update(request requests.UpdateCardRequest) (*response.ApiResponse[*response.CardResponse], *response.ErrorResponse) {
 	_, err := s.userRepository.Read(request.UserID)
 	if err != nil {
 		s.logger.Error("failed to find user", zap.Error(err))
@@ -177,11 +190,12 @@ func (s *cardService) Update(request requests.UpdateCardRequest) (*response.ApiR
 			Message: "Failed to update card record",
 		}
 	}
+	so := s.mapper.ToCardResponse(*card)
 
-	return &response.ApiResponse[*record.CardRecord]{
+	return &response.ApiResponse[*response.CardResponse]{
 		Status:  "success",
 		Message: "Card record updated successfully",
-		Data:    card,
+		Data:    so,
 	}, nil
 }
 

@@ -2,9 +2,9 @@ package service
 
 import (
 	"fmt"
-	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
 	"payment-mutex/internal/domain/response"
+	responseMapper "payment-mutex/internal/mapper/response"
 	"payment-mutex/internal/repository"
 	"payment-mutex/pkg/logger"
 	"strconv"
@@ -17,22 +17,26 @@ type topupService struct {
 	topupRepository repository.TopupRepository
 	saldoRepository repository.SaldoRepository
 	logger          logger.Logger
+	mapper          responseMapper.TopupResponseMapper
 }
 
 func NewTopupService(
 	cardRepository repository.CardRepository,
 	topupRepository repository.TopupRepository,
 	saldoRepository repository.SaldoRepository,
-	logger logger.Logger) *topupService {
+	logger logger.Logger,
+	mapper responseMapper.TopupResponseMapper,
+) *topupService {
 	return &topupService{
 		cardRepository:  cardRepository,
 		topupRepository: topupRepository,
 		saldoRepository: saldoRepository,
 		logger:          logger,
+		mapper:          mapper,
 	}
 }
 
-func (s *topupService) FindAll() (*response.ApiResponse[[]*record.TopupRecord], *response.ErrorResponse) {
+func (s *topupService) FindAll() (*response.ApiResponse[[]*response.TopupResponse], *response.ErrorResponse) {
 	topup, err := s.topupRepository.ReadAll()
 	if err != nil {
 		s.logger.Error("failed to find all topups", zap.Error(err))
@@ -42,14 +46,16 @@ func (s *topupService) FindAll() (*response.ApiResponse[[]*record.TopupRecord], 
 		}
 	}
 
-	return &response.ApiResponse[[]*record.TopupRecord]{
+	so := s.mapper.ToTopupResponses(topup)
+
+	return &response.ApiResponse[[]*response.TopupResponse]{
 		Status:  "success",
 		Message: "Successfully fetched all topup records",
-		Data:    topup,
+		Data:    so,
 	}, nil
 }
 
-func (s *topupService) FindById(topupID int) (*response.ApiResponse[*record.TopupRecord], *response.ErrorResponse) {
+func (s *topupService) FindById(topupID int) (*response.ApiResponse[*response.TopupResponse], *response.ErrorResponse) {
 	topup, err := s.topupRepository.Read(topupID)
 	if err != nil {
 		s.logger.Error("failed to find topup by id", zap.Error(err))
@@ -59,14 +65,16 @@ func (s *topupService) FindById(topupID int) (*response.ApiResponse[*record.Topu
 		}
 	}
 
-	return &response.ApiResponse[*record.TopupRecord]{
+	so := s.mapper.ToTopupResponse(*topup)
+
+	return &response.ApiResponse[*response.TopupResponse]{
 		Status:  "success",
 		Message: "Successfully fetched topup record",
-		Data:    topup,
+		Data:    so,
 	}, nil
 }
 
-func (s *topupService) Create(request requests.CreateTopupRequest) (*response.ApiResponse[*record.TopupRecord], *response.ErrorResponse) {
+func (s *topupService) Create(request requests.CreateTopupRequest) (*response.ApiResponse[*response.TopupResponse], *response.ErrorResponse) {
 	_, err := s.cardRepository.ReadByCardNumber(request.CardNumber)
 	if err != nil {
 		s.logger.Error("failed to find card by number", zap.Error(err))
@@ -109,14 +117,16 @@ func (s *topupService) Create(request requests.CreateTopupRequest) (*response.Ap
 		}
 	}
 
-	return &response.ApiResponse[*record.TopupRecord]{
+	so := s.mapper.ToTopupResponse(*topup)
+
+	return &response.ApiResponse[*response.TopupResponse]{
 		Status:  "success",
 		Message: "Topup record created successfully",
-		Data:    topup,
+		Data:    so,
 	}, nil
 }
 
-func (s *topupService) Update(request requests.UpdateTopupRequest) (*response.ApiResponse[*record.TopupRecord], *response.ErrorResponse) {
+func (s *topupService) Update(request requests.UpdateTopupRequest) (*response.ApiResponse[*response.TopupResponse], *response.ErrorResponse) {
 	_, err := s.cardRepository.ReadByCardNumber(request.CardNumber)
 	if err != nil {
 		s.logger.Error("failed to find card by number", zap.Error(err))
@@ -204,10 +214,12 @@ func (s *topupService) Update(request requests.UpdateTopupRequest) (*response.Ap
 		}
 	}
 
-	return &response.ApiResponse[*record.TopupRecord]{
+	so := s.mapper.ToTopupResponse(*updatedTopup)
+
+	return &response.ApiResponse[*response.TopupResponse]{
 		Status:  "success",
 		Message: "Topup successfully updated",
-		Data:    updatedTopup,
+		Data:    so,
 	}, nil
 }
 

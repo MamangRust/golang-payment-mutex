@@ -19,18 +19,6 @@ type dashboardService struct {
 	logger                logger.Logger
 }
 
-type OverviewData struct {
-	TotalBalance   int            `json:"total_balance"`
-	ActiveCards    int            `json:"active_cards"`
-	TotalTransaksi int            `json:"total_transaksi"`
-	TotalTopup     int            `json:"total_topup"`
-	TopupAmount    int            `json:"topup_amount"`
-	TotalWithdraw  int            `json:"total_withdraw"`
-	WithdrawAmount int            `json:"withdraw_amount"`
-	TotalTransfer  int            `json:"total_transfer"`
-	ActivityTrends map[string]int `json:"activity_trends"`
-}
-
 func NewDashboardService(
 	cardRepository repository.CardRepository,
 	saldoRepository repository.SaldoRepository,
@@ -51,9 +39,9 @@ func NewDashboardService(
 	}
 }
 
-func (s *dashboardService) GetGlobalOverview() (*response.ApiResponse[*OverviewData], *response.ErrorResponse) {
+func (s *dashboardService) GetGlobalOverview() (*response.ApiResponse[*response.OverviewData], *response.ErrorResponse) {
 	// Initialize the overview data
-	overview := &OverviewData{
+	overview := &response.OverviewData{
 		ActivityTrends: make(map[string]int),
 	}
 
@@ -153,8 +141,7 @@ func (s *dashboardService) GetGlobalOverview() (*response.ApiResponse[*OverviewD
 		overview.ActivityTrends[date] = transactions + topups + withdrawals + transfers
 	}
 
-	// Return the overview response
-	return &response.ApiResponse[*OverviewData]{
+	return &response.ApiResponse[*response.OverviewData]{
 		Status:  "success",
 		Message: "Global overview retrieved successfully",
 		Data:    overview,

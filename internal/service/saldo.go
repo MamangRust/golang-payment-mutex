@@ -1,9 +1,9 @@
 package service
 
 import (
-	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
 	"payment-mutex/internal/domain/response"
+	responseMapper "payment-mutex/internal/mapper/response"
 	"payment-mutex/internal/repository"
 	"payment-mutex/pkg/logger"
 	"strconv"
@@ -15,20 +15,24 @@ type saldoService struct {
 	cardRepository  repository.CardRepository
 	saldoRepository repository.SaldoRepository
 	logger          logger.Logger
+	mapper          responseMapper.SaldoResponseMapper
 }
 
 func NewSaldoService(
 	cardRepository repository.CardRepository,
 	saldoRepository repository.SaldoRepository,
-	logger logger.Logger) *saldoService {
+	logger logger.Logger,
+	mapper responseMapper.SaldoResponseMapper,
+) *saldoService {
 	return &saldoService{
 		cardRepository:  cardRepository,
 		saldoRepository: saldoRepository,
 		logger:          logger,
+		mapper:          mapper,
 	}
 }
 
-func (s *saldoService) FindAll() (*response.ApiResponse[[]*record.SaldoRecord], *response.ErrorResponse) {
+func (s *saldoService) FindAll() (*response.ApiResponse[[]*response.SaldoResponse], *response.ErrorResponse) {
 	saldo, err := s.saldoRepository.ReadAll()
 	if err != nil {
 		s.logger.Error("failed find all saldo", zap.Error(err))
@@ -38,14 +42,16 @@ func (s *saldoService) FindAll() (*response.ApiResponse[[]*record.SaldoRecord], 
 		}
 	}
 
-	return &response.ApiResponse[[]*record.SaldoRecord]{
+	so := s.mapper.ToSaldoResponses(saldo)
+
+	return &response.ApiResponse[[]*response.SaldoResponse]{
 		Status:  "success",
 		Message: "Successfully fetched all saldo records",
-		Data:    saldo,
+		Data:    so,
 	}, nil
 }
 
-func (s *saldoService) FindById(saldoID int) (*response.ApiResponse[*record.SaldoRecord], *response.ErrorResponse) {
+func (s *saldoService) FindById(saldoID int) (*response.ApiResponse[*response.SaldoResponse], *response.ErrorResponse) {
 	saldo, err := s.saldoRepository.Read(saldoID)
 	if err != nil {
 		s.logger.Error("failed find saldo by id", zap.Error(err))
@@ -55,14 +61,16 @@ func (s *saldoService) FindById(saldoID int) (*response.ApiResponse[*record.Sald
 		}
 	}
 
-	return &response.ApiResponse[*record.SaldoRecord]{
+	so := s.mapper.ToSaldoResponse(*saldo)
+
+	return &response.ApiResponse[*response.SaldoResponse]{
 		Status:  "success",
 		Message: "Successfully fetched saldo record",
-		Data:    saldo,
+		Data:    so,
 	}, nil
 }
 
-func (s *saldoService) Create(requests requests.CreateSaldoRequest) (*response.ApiResponse[*record.SaldoRecord], *response.ErrorResponse) {
+func (s *saldoService) Create(requests requests.CreateSaldoRequest) (*response.ApiResponse[*response.SaldoResponse], *response.ErrorResponse) {
 	_, err := s.cardRepository.ReadByCardNumber(requests.CardNumber)
 	if err != nil {
 		s.logger.Error("failed to find card", zap.Error(err))
@@ -81,14 +89,16 @@ func (s *saldoService) Create(requests requests.CreateSaldoRequest) (*response.A
 		}
 	}
 
-	return &response.ApiResponse[*record.SaldoRecord]{
+	so := s.mapper.ToSaldoResponse(*saldo)
+
+	return &response.ApiResponse[*response.SaldoResponse]{
 		Status:  "success",
 		Message: "Saldo record created successfully",
-		Data:    saldo,
+		Data:    so,
 	}, nil
 }
 
-func (s *saldoService) Update(requests requests.UpdateSaldoRequest) (*response.ApiResponse[*record.SaldoRecord], *response.ErrorResponse) {
+func (s *saldoService) Update(requests requests.UpdateSaldoRequest) (*response.ApiResponse[*response.SaldoResponse], *response.ErrorResponse) {
 	_, err := s.cardRepository.ReadByCardNumber(requests.CardNumber)
 	if err != nil {
 		s.logger.Error("failed to find card", zap.Error(err))
@@ -107,10 +117,12 @@ func (s *saldoService) Update(requests requests.UpdateSaldoRequest) (*response.A
 		}
 	}
 
-	return &response.ApiResponse[*record.SaldoRecord]{
+	so := s.mapper.ToSaldoResponse(*saldo)
+
+	return &response.ApiResponse[*response.SaldoResponse]{
 		Status:  "success",
 		Message: "Saldo record updated successfully",
-		Data:    saldo,
+		Data:    so,
 	}, nil
 }
 

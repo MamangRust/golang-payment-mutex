@@ -6,7 +6,6 @@ import (
 	"payment-mutex/internal/domain/requests"
 	recordmapper "payment-mutex/internal/mapper/record"
 	"payment-mutex/internal/models"
-	"payment-mutex/pkg/randomvcc"
 	"sync"
 )
 
@@ -73,19 +72,12 @@ func (ds *userRepository) Create(request requests.CreateUserRequest) (*record.Us
 		}
 	}
 
-	random, err := randomvcc.RandomVCC()
-
-	if err != nil {
-		return nil, fmt.Errorf("random vcc error: %d", err)
-	}
-
 	user := models.User{
-		UserID:      ds.nextID,
-		Email:       request.Email,
-		FirstName:   request.FirstName,
-		LastName:    request.LastName,
-		Password:    request.Password,
-		NocTransfer: int(random),
+		UserID:    ds.nextID,
+		Email:     request.Email,
+		FirstName: request.FirstName,
+		LastName:  request.LastName,
+		Password:  request.Password,
 	}
 
 	user.UserID = ds.nextID
@@ -105,17 +97,10 @@ func (ds *userRepository) Update(request requests.UpdateUserRequest) (*record.Us
 		return nil, fmt.Errorf("user with id %d not found", request.UserID)
 	}
 
-	random, err := randomvcc.RandomVCC()
-
-	if err != nil {
-		return nil, fmt.Errorf("random vcc error: %d", err)
-	}
-
 	user.Email = request.Email
 	user.FirstName = request.FirstName
 	user.LastName = request.LastName
 	user.Password = request.Password
-	user.NocTransfer = int(random)
 
 	ds.users[request.UserID] = user
 

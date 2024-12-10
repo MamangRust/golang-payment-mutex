@@ -6,6 +6,8 @@ import (
 	"payment-mutex/internal/domain/requests"
 	recordmapper "payment-mutex/internal/mapper/record"
 	"payment-mutex/internal/models"
+	"payment-mutex/pkg/randomvcc"
+	"strconv"
 	"sync"
 )
 
@@ -116,10 +118,16 @@ func (ds *cardRepository) Create(request requests.CreateCardRequest) (*record.Ca
 		}
 	}
 
+	random, err := randomvcc.RandomCardNumber()
+
+	if err != nil {
+		return nil, fmt.Errorf("random vcc error: %d", err)
+	}
+
 	card := models.Card{
 		CardID:       ds.nextID,
 		UserID:       request.UserID,
-		CardNumber:   request.CardNumber,
+		CardNumber:   strconv.Itoa(int(random)),
 		CardType:     request.CardType,
 		ExpireDate:   request.ExpireDate,
 		CVV:          request.CVV,
@@ -143,7 +151,6 @@ func (ds *cardRepository) Update(request requests.UpdateCardRequest) (*record.Ca
 		return nil, fmt.Errorf("card with ID %d not found", request.CardID)
 	}
 
-	card.CardNumber = request.CardNumber
 	card.CardType = request.CardType
 	card.ExpireDate = request.ExpireDate
 	card.CVV = request.CVV

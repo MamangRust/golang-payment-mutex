@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func RandomVCC() (int64, error) {
+func RandomCardNumber() (int64, error) {
 	source := rand.NewSource(time.Now().UnixNano())
 	rand := rand.New(source)
 

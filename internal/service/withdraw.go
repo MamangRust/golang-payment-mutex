@@ -1,9 +1,9 @@
 package service
 
 import (
-	"payment-mutex/internal/domain/record"
 	"payment-mutex/internal/domain/requests"
 	"payment-mutex/internal/domain/response"
+	responseMapper "payment-mutex/internal/mapper/response"
 	"payment-mutex/internal/repository"
 	"payment-mutex/pkg/logger"
 
@@ -15,20 +15,22 @@ type withdrawService struct {
 	saldoRepository    repository.SaldoRepository
 	withdrawRepository repository.WithdrawRepository
 	logger             logger.Logger
+	mapper             responseMapper.WithdrawResponseMapper
 }
 
 func NewWithdrawService(
 	userRepository repository.UserRepository,
-	withdrawRepository repository.WithdrawRepository, saldoRepository repository.SaldoRepository, logger logger.Logger) *withdrawService {
+	withdrawRepository repository.WithdrawRepository, saldoRepository repository.SaldoRepository, logger logger.Logger, mapper responseMapper.WithdrawResponseMapper) *withdrawService {
 	return &withdrawService{
 		userRepository:     userRepository,
 		saldoRepository:    saldoRepository,
 		withdrawRepository: withdrawRepository,
 		logger:             logger,
+		mapper:             mapper,
 	}
 }
 
-func (s *withdrawService) FindAll() (*response.ApiResponse[[]*record.WithdrawRecord], *response.ErrorResponse) {
+func (s *withdrawService) FindAll() (*response.ApiResponse[[]*response.WithdrawResponse], *response.ErrorResponse) {
 	withdraws, err := s.withdrawRepository.ReadAll()
 	if err != nil {
 		s.logger.Error("failed to find all withdraws", zap.Error(err))
@@ -38,14 +40,16 @@ func (s *withdrawService) FindAll() (*response.ApiResponse[[]*record.WithdrawRec
 		}
 	}
 
-	return &response.ApiResponse[[]*record.WithdrawRecord]{
+	so := s.mapper.ToWithdrawsResponse(withdraws)
+
+	return &response.ApiResponse[[]*response.WithdrawResponse]{
 		Status:  "success",
 		Message: "Successfully retrieved all withdraw records.",
-		Data:    withdraws,
+		Data:    so,
 	}, nil
 }
 
-func (s *withdrawService) FindById(withdrawID int) (*response.ApiResponse[*record.WithdrawRecord], *response.ErrorResponse) {
+func (s *withdrawService) FindById(withdrawID int) (*response.ApiResponse[*response.WithdrawResponse], *response.ErrorResponse) {
 	withdraw, err := s.withdrawRepository.Read(withdrawID)
 	if err != nil {
 		s.logger.Error("failed to find withdraw by id", zap.Error(err))
@@ -54,15 +58,16 @@ func (s *withdrawService) FindById(withdrawID int) (*response.ApiResponse[*recor
 			Message: "Failed to fetch withdraw record by ID.",
 		}
 	}
+	so := s.mapper.ToWithdrawResponse(*withdraw)
 
-	return &response.ApiResponse[*record.WithdrawRecord]{
+	return &response.ApiResponse[*response.WithdrawResponse]{
 		Status:  "success",
 		Message: "Successfully retrieved withdraw record by ID.",
-		Data:    withdraw,
+		Data:    so,
 	}, nil
 }
 
-func (s *withdrawService) Create(request requests.CreateWithdrawRequest) (*response.ApiResponse[*record.WithdrawRecord], *response.ErrorResponse) {
+func (s *withdrawService) Create(request requests.CreateWithdrawRequest) (*response.ApiResponse[*response.WithdrawResponse], *response.ErrorResponse) {
 	saldo, err := s.saldoRepository.ReadByCardNumber(request.CardNumber)
 	if err != nil {
 		s.logger.Error("Failed to find saldo by user ID", zap.Error(err))
@@ -117,14 +122,16 @@ func (s *withdrawService) Create(request requests.CreateWithdrawRequest) (*respo
 		}
 	}
 
-	return &response.ApiResponse[*record.WithdrawRecord]{
+	so := s.mapper.ToWithdrawResponse(*withdrawRecord)
+
+	return &response.ApiResponse[*response.WithdrawResponse]{
 		Status:  "success",
 		Message: "Withdrawal created successfully.",
-		Data:    withdrawRecord,
+		Data:    so,
 	}, nil
 }
 
-func (s *withdrawService) Update(request requests.UpdateWithdrawRequest) (*response.ApiResponse[*record.WithdrawRecord], *response.ErrorResponse) {
+func (s *withdrawService) Update(request requests.UpdateWithdrawRequest) (*response.ApiResponse[*response.WithdrawResponse], *response.ErrorResponse) {
 	_, err := s.withdrawRepository.Read(request.WithdrawID)
 	if err != nil {
 		s.logger.Error("Failed to find withdraw record by ID", zap.Error(err))
@@ -187,10 +194,12 @@ func (s *withdrawService) Update(request requests.UpdateWithdrawRequest) (*respo
 		}
 	}
 
-	return &response.ApiResponse[*record.WithdrawRecord]{
+	so := s.mapper.ToWithdrawResponse(*updatedWithdraw)
+
+	return &response.ApiResponse[*response.WithdrawResponse]{
 		Status:  "success",
 		Message: "Withdraw record updated successfully.",
-		Data:    updatedWithdraw,
+		Data:    so,
 	}, nil
 }
 
