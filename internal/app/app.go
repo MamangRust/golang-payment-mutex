@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"payment-mutex/internal/handler"
 	recordmapper "payment-mutex/internal/mapper/record"
+	responseMapper "payment-mutex/internal/mapper/response"
 	"payment-mutex/internal/repository"
 	"payment-mutex/internal/service"
 	"payment-mutex/pkg/auth"
@@ -52,10 +53,11 @@ func Run() {
 	}
 
 	service := service.NewServices(service.Deps{
-		Repository: repository,
-		Logger:     *log,
-		Hash:       hashing,
-		Token:      token,
+		Repository:     repository,
+		Logger:         *log,
+		Hash:           hashing,
+		Token:          token,
+		MapperResponse: *responseMapper.NewResponseMapper(),
 	})
 
 	myhandler := handler.NewHandler(service)

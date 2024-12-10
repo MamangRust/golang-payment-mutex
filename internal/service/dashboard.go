@@ -16,6 +16,7 @@ type dashboardService struct {
 	topupRepository       repository.TopupRepository
 	withdrawRepository    repository.WithdrawRepository
 	transferRepository    repository.TransactionRepository
+	merchantRepository    repository.MerchantRepository
 	logger                logger.Logger
 }
 
@@ -26,6 +27,7 @@ func NewDashboardService(
 	topupRepository repository.TopupRepository,
 	withdrawRepository repository.WithdrawRepository,
 	transferRepository repository.TransactionRepository,
+	merchantRepository repository.MerchantRepository,
 	logger logger.Logger,
 ) *dashboardService {
 	return &dashboardService{
@@ -35,12 +37,12 @@ func NewDashboardService(
 		topupRepository:       topupRepository,
 		withdrawRepository:    withdrawRepository,
 		transferRepository:    transferRepository,
+		merchantRepository:    merchantRepository,
 		logger:                logger,
 	}
 }
 
 func (s *dashboardService) GetGlobalOverview() (*response.ApiResponse[*response.OverviewData], *response.ErrorResponse) {
-	// Initialize the overview data
 	overview := &response.OverviewData{
 		ActivityTrends: make(map[string]int),
 	}
@@ -140,6 +142,25 @@ func (s *dashboardService) GetGlobalOverview() (*response.ApiResponse[*response.
 
 		overview.ActivityTrends[date] = transactions + topups + withdrawals + transfers
 	}
+
+	merchants, err := s.merchantRepository.ReadAll()
+	if err != nil {
+		s.logger.Error("failed to fetch merchants", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to fetch merchant data",
+		}
+	}
+
+	totalMerchants := len(merchants)
+	activeMerchants := 0
+	for _, merchant := range merchants {
+		if merchant.Status == "active" {
+			activeMerchants++
+		}
+	}
+	overview.TotalMerchants = totalMerchants
+	overview.ActiveMerchants = activeMerchants
 
 	return &response.ApiResponse[*response.OverviewData]{
 		Status:  "success",

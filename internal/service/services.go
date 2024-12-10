@@ -50,6 +50,7 @@ func NewServices(deps Deps) *Services {
 			deps.Repository.Card, deps.Repository.Saldo, deps.Repository.Transaction, deps.Logger, deps.MapperResponse.TransactionResponseMapper),
 		Dashboard: NewDashboardService(
 			deps.Repository.Card, deps.Repository.Saldo, deps.Repository.Transaction, deps.Repository.Topup, deps.Repository.Withdraw, deps.Repository.Transaction,
+			deps.Repository.Merchant,
 			deps.Logger,
 		),
 		Merchant: NewMerchantService(
