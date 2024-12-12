@@ -6,7 +6,7 @@ import (
 )
 
 type UserRepository interface {
-	ReadAll() ([]*record.UserRecord, error)
+	ReadAll(page int, pageSize int, search string) ([]*record.UserRecord, int, error)
 	Read(userID int) (*record.UserRecord, error)
 	ReadByEmail(email string) (*record.UserRecord, error)
 	Create(request requests.CreateUserRequest) (*record.UserRecord, error)

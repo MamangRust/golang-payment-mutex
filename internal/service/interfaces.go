@@ -11,7 +11,7 @@ type AuthService interface {
 }
 
 type UserService interface {
-	FindAll() (*response.ApiResponse[[]*response.UserResponse], *response.ErrorResponse)
+	FindAll(page int, pageSize int, search string) (*response.APIResponsePagination[[]*response.UserResponse], *response.ErrorResponse)
 	FindByID(id int) (*response.ApiResponse[*response.UserResponse], *response.ErrorResponse)
 	Create(request requests.CreateUserRequest) (*response.ApiResponse[*response.UserResponse], *response.ErrorResponse)
 	Update(request requests.UpdateUserRequest) (*response.ApiResponse[*response.UserResponse], *response.ErrorResponse)

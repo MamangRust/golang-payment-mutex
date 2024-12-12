@@ -108,8 +108,9 @@ func (s *transactionService) Create(apiKey string, request requests.CreateTransa
 	}
 
 	// Periksa apakah saldo mencukupi
+	// s.logger.Info("Checking balance", zap.Int("AvailableBalance", saldo.TotalBalance), zap.Int("TransactionAmount", request.Amount))
 	if saldo.TotalBalance < request.Amount {
-		s.logger.Error("insufficient balance", zap.Int("available_balance", saldo.TotalBalance), zap.Int("transaction_amount", request.Amount))
+		s.logger.Error("insufficient balance", zap.Int("AvailableBalance", saldo.TotalBalance), zap.Int("TransactionAmount", request.Amount))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
 			Message: "Insufficient balance",
@@ -118,6 +119,7 @@ func (s *transactionService) Create(apiKey string, request requests.CreateTransa
 
 	// Proses pengurangan saldo
 	saldo.TotalBalance -= request.Amount
+	// s.logger.Info("Balance after deduction", zap.Int("NewBalance", saldo.TotalBalance))
 	if _, err := s.saldoRepository.UpdateBalance(requests.UpdateSaldoBalance{
 		CardNumber:   card.CardNumber,
 		TotalBalance: saldo.TotalBalance,
@@ -131,9 +133,15 @@ func (s *transactionService) Create(apiKey string, request requests.CreateTransa
 
 	// Buat transaksi
 	request.MerchantID = &merchant.MerchantID
+	// s.logger.Info("Creating transaction", zap.Any("Request", zapcore.Field.A))
 	transaction, err := s.transactionRepository.Create(request)
 	if err != nil {
 		// Rollback saldo jika pembuatan transaksi gagal
+		saldo.TotalBalance += request.Amount
+		s.saldoRepository.UpdateBalance(requests.UpdateSaldoBalance{
+			CardNumber:   card.CardNumber,
+			TotalBalance: saldo.TotalBalance,
+		})
 		s.logger.Error("failed to create transaction", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
@@ -162,6 +170,7 @@ func (s *transactionService) Create(apiKey string, request requests.CreateTransa
 
 	// Tambahkan saldo ke merchant
 	merchantSaldo.TotalBalance += request.Amount
+	// s.logger.Info("Updating merchant saldo", zap.Int("NewMerchantBalance", merchantSaldo.TotalBalance))
 	if _, err := s.saldoRepository.UpdateBalance(requests.UpdateSaldoBalance{
 		CardNumber:   merchantCard.CardNumber,
 		TotalBalance: merchantSaldo.TotalBalance,
@@ -183,18 +192,7 @@ func (s *transactionService) Create(apiKey string, request requests.CreateTransa
 }
 
 func (s *transactionService) Update(apiKey string, request requests.UpdateTransactionRequest) (*response.ApiResponse[*response.TransactionResponse], *response.ErrorResponse) {
-	// Validate merchant based on API key
-	merchant, err := s.merchantRepository.ReadByApiKey(apiKey)
-	if err != nil {
-		s.logger.Error("failed to find merchant", zap.Error(err))
-		return nil, &response.ErrorResponse{
-			Status:  "error",
-			Message: "Merchant not found",
-		}
-	}
-
-	// Find the existing transaction
-	existingTransaction, err := s.transactionRepository.Read(request.TransactionID)
+	transaction, err := s.transactionRepository.Read(request.TransactionID)
 	if err != nil {
 		s.logger.Error("failed to find transaction", zap.Error(err))
 		return nil, &response.ErrorResponse{
@@ -203,89 +201,95 @@ func (s *transactionService) Update(apiKey string, request requests.UpdateTransa
 		}
 	}
 
-	// Validate that the merchant owns the transaction
-	if existingTransaction.MerchantID != merchant.MerchantID {
-		s.logger.Error("merchant not authorized to update transaction",
-			zap.Int("transaction_merchant_id", existingTransaction.MerchantID),
-			zap.Int("current_merchant_id", merchant.MerchantID))
+	// Validasi apakah merchant API key sesuai dengan merchant ID dalam transaksi
+	merchant, err := s.merchantRepository.ReadByApiKey(apiKey)
+
+	if err != nil || transaction.MerchantID != merchant.MerchantID {
+		s.logger.Error("unauthorized access to transaction", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Not authorized to update this transaction",
+			Message: "Unauthorized access to transaction",
 		}
 	}
 
-	// Prepare update fields
-	updateRequest := requests.UpdateTransactionRequest{
-		TransactionID:   request.TransactionID,
-		CardNumber:      request.CardNumber,
-		Amount:          request.Amount,
-		PaymentMethod:   request.PaymentMethod,
-		MerchantID:      request.MerchantID,
-		TransactionTime: request.TransactionTime,
-	}
-
-	// Perform balance adjustment if amount changes
-	if request.Amount != existingTransaction.Amount {
-		// Get card information
-		card, err := s.cardRepository.ReadByCardNumber(request.CardNumber)
-		if err != nil {
-			s.logger.Error("failed to find card", zap.Error(err))
-			return nil, &response.ErrorResponse{
-				Status:  "error",
-				Message: "Card not found",
-			}
-		}
-
-		// Get current card balance
-		saldo, err := s.saldoRepository.ReadByCardNumber(card.CardNumber)
-		if err != nil {
-			s.logger.Error("failed to find saldo", zap.Error(err))
-			return nil, &response.ErrorResponse{
-				Status:  "error",
-				Message: "Saldo not found",
-			}
-		}
-
-		// Calculate balance difference
-		amountDifference := request.Amount - existingTransaction.Amount
-
-		// Check if sufficient balance for increased amount
-		if amountDifference > 0 && saldo.TotalBalance < amountDifference {
-			s.logger.Error("insufficient balance",
-				zap.Int("available_balance", saldo.TotalBalance),
-				zap.Int("additional_amount", amountDifference))
-			return nil, &response.ErrorResponse{
-				Status:  "error",
-				Message: "Insufficient balance",
-			}
-		}
-
-		// Update card balance
-		saldo.TotalBalance -= amountDifference
-		if _, err := s.saldoRepository.UpdateBalance(requests.UpdateSaldoBalance{
-			CardNumber:   card.CardNumber,
-			TotalBalance: saldo.TotalBalance,
-		}); err != nil {
-			s.logger.Error("failed to update saldo", zap.Error(err))
-			return nil, &response.ErrorResponse{
-				Status:  "error",
-				Message: "Failed to update saldo",
-			}
+	// Ambil informasi kartu dan saldo berdasarkan kartu yang terkait dengan transaksi
+	card, err := s.cardRepository.ReadByCardNumber(transaction.CardNumber)
+	if err != nil {
+		s.logger.Error("failed to find card", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Card not found",
 		}
 	}
 
-	// Update transaction
-	updatedTransaction, err := s.transactionRepository.Update(updateRequest)
+	saldo, err := s.saldoRepository.ReadByCardNumber(card.CardNumber)
+	if err != nil {
+		s.logger.Error("failed to find saldo", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Saldo not found",
+		}
+	}
+
+	// Kembalikan saldo ke pengguna untuk jumlah transaksi lama
+	saldo.TotalBalance += transaction.Amount
+	s.logger.Debug("Restoring balance for old transaction amount", zap.Int("RestoredBalance", saldo.TotalBalance))
+	if _, err := s.saldoRepository.UpdateBalance(requests.UpdateSaldoBalance{
+		CardNumber:   card.CardNumber,
+		TotalBalance: saldo.TotalBalance,
+	}); err != nil {
+		s.logger.Error("failed to restore balance", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to restore balance",
+		}
+	}
+
+	// Validasi saldo untuk jumlah transaksi baru
+	if saldo.TotalBalance < request.Amount {
+		s.logger.Error("insufficient balance for updated amount", zap.Int("AvailableBalance", saldo.TotalBalance), zap.Int("UpdatedAmount", request.Amount))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Insufficient balance for updated transaction",
+		}
+	}
+
+	// Perbarui saldo berdasarkan jumlah transaksi baru
+	saldo.TotalBalance -= request.Amount
+	s.logger.Info("Updating balance for updated transaction amount")
+	if _, err := s.saldoRepository.UpdateBalance(requests.UpdateSaldoBalance{
+		CardNumber:   card.CardNumber,
+		TotalBalance: saldo.TotalBalance,
+	}); err != nil {
+		s.logger.Error("failed to update balance", zap.Error(err))
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "Failed to update balance",
+		}
+	}
+
+	transaction.Amount = request.Amount
+	transaction.PaymentMethod = request.PaymentMethod
+
+	res, err := s.transactionRepository.Update(requests.UpdateTransactionRequest{
+		TransactionID:   transaction.TransactionID,
+		CardNumber:      transaction.CardNumber,
+		Amount:          transaction.Amount,
+		PaymentMethod:   transaction.PaymentMethod,
+		MerchantID:      &transaction.MerchantID,
+		TransactionTime: transaction.TransactionTime,
+	})
+
 	if err != nil {
 		s.logger.Error("failed to update transaction", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to update transaction record",
+			Message: "Failed to update transaction",
 		}
 	}
 
-	// Map and return updated transaction
-	so := s.mapper.ToTransactionResponse(*updatedTransaction)
+	
+	so := s.mapper.ToTransactionResponse(*res)
 	return &response.ApiResponse[*response.TransactionResponse]{
 		Status:  "success",
 		Message: "Transaction updated successfully",

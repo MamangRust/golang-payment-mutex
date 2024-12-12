@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"payment-mutex/internal/domain/requests"
 	"payment-mutex/internal/domain/response"
 	responseMapper "payment-mutex/internal/mapper/response"
@@ -111,6 +112,8 @@ func (s *merchantService) Create(request requests.CreateMerchantRequest) (*respo
 	merchant, err := s.merchantRepository.Create(request)
 
 	if err != nil {
+		fmt.Println(err.Error())
+
 		s.logger.Error("failed to create merchant", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",

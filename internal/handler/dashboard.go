@@ -7,7 +7,7 @@ import (
 )
 
 func (h *handler) initDashboardGroup(prefix string, router *http.ServeMux) {
-	router.Handle(prefix+"", middleware.Middleware(http.HandlerFunc(h.Dashboard)))
+	router.Handle(prefix+"", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.Dashboard)))
 }
 
 func (h *handler) Dashboard(w http.ResponseWriter, r *http.Request) {

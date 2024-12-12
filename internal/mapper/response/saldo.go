@@ -17,8 +17,8 @@ func (s *saldoResponseMapper) ToSaldoResponse(saldo record.SaldoRecord) *respons
 		ID:             saldo.SaldoID,
 		CardNumber:     saldo.CardNumber,
 		TotalBalance:   saldo.TotalBalance,
-		WithdrawAmount: saldo.WithdrawAmount,
-		WithdrawTime:   saldo.WithdrawTime,
+		WithdrawAmount: &saldo.WithdrawAmount,
+		WithdrawTime:   &saldo.WithdrawTime,
 	}
 }
 

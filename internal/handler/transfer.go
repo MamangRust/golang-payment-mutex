@@ -10,11 +10,11 @@ import (
 )
 
 func (h *handler) initTransferGroup(prefix string, router *http.ServeMux) {
-	router.Handle(prefix+"/find_all", middleware.Middleware(http.HandlerFunc(h.FindAllTransfer)))
-	router.Handle(prefix+"/find_by_id", middleware.Middleware(http.HandlerFunc(h.FindByIdTransfer)))
-	router.Handle(prefix+"/create", middleware.Middleware(http.HandlerFunc(h.CreateTransfer)))
-	router.Handle(prefix+"/update", middleware.Middleware(http.HandlerFunc(h.UpdateTransfer)))
-	router.Handle(prefix+"/delete", middleware.Middleware(http.HandlerFunc(h.DeleteTransfer)))
+	router.Handle(prefix+"/find_all", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.FindAllTransfer)))
+	router.Handle(prefix+"/find_by_id", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.FindByIdTransfer)))
+	router.Handle(prefix+"/create", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.CreateTransfer)))
+	router.Handle(prefix+"/update", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.UpdateTransfer)))
+	router.Handle(prefix+"/delete", middleware.MiddlewareAuthAndCors(http.HandlerFunc(h.DeleteTransfer)))
 }
 
 func (h *handler) FindAllTransfer(w http.ResponseWriter, r *http.Request) {

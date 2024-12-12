@@ -31,7 +31,7 @@ func ResponseToken(w http.ResponseWriter, message string, token string, status i
 	}
 }
 
-func ResponseMessage[T any](w http.ResponseWriter, res ApiResponse[T]) {
+func ResponseMessage[T any](w http.ResponseWriter, res T) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 

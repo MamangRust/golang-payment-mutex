@@ -17,6 +17,7 @@ func (s *merchantResponseMapper) ToMerchantResponse(merchant record.MerchantReco
 		ID:     merchant.MerchantID,
 		Name:   merchant.Name,
 		Status: merchant.Status,
+		ApiKey: merchant.ApiKey,
 	}
 }
 

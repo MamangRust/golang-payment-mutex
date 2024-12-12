@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"payment-mutex/internal/domain/requests"
 	"payment-mutex/internal/domain/response"
@@ -90,6 +91,7 @@ func (h *handler) CreateCard(w http.ResponseWriter, r *http.Request) {
 			Status:  "error",
 			Message: "Error invalid request",
 		}
+		fmt.Println(err)
 		response.ResponseError(w, res)
 		return
 	}
@@ -99,6 +101,8 @@ func (h *handler) CreateCard(w http.ResponseWriter, r *http.Request) {
 			Status:  "error",
 			Message: "Error invalid validate request",
 		}
+		fmt.Println(err)
+
 		response.ResponseError(w, res)
 		return
 	}
@@ -134,6 +138,7 @@ func (h *handler) UpdateCard(w http.ResponseWriter, r *http.Request) {
 			Status:  "error",
 			Message: "Error invalid request",
 		}
+		fmt.Println(err)
 		response.ResponseError(w, res)
 		return
 	}
@@ -143,6 +148,7 @@ func (h *handler) UpdateCard(w http.ResponseWriter, r *http.Request) {
 			Status:  "error",
 			Message: "Error invalid validate request",
 		}
+		fmt.Println(err)
 		response.ResponseError(w, res)
 		return
 	}

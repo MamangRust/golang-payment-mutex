@@ -4,13 +4,13 @@ import "github.com/go-playground/validator/v10"
 
 type CreateMerchantRequest struct {
 	Name   string `json:"name"`
-	UserID *int   `json:"user_id"`
+	UserID int    `json:"user_id"`
 }
 
 type UpdateMerchantRequest struct {
 	MerchantID int    `json:"merchant_id"`
 	Name       string `json:"name"`
-	UserID     *int   `json:"user_id"`
+	UserID     int    `json:"user_id"`
 	Status     string `json:"status"`
 }
 

@@ -6,6 +6,7 @@ import (
 	"payment-mutex/internal/domain/requests"
 	recordmapper "payment-mutex/internal/mapper/record"
 	"payment-mutex/internal/models"
+	"strings"
 	"sync"
 )
 
@@ -24,16 +25,36 @@ func NewUserRepository(mapping recordmapper.UserRecordMapping) *userRepository {
 	}
 }
 
-func (ds *userRepository) ReadAll() ([]*record.UserRecord, error) {
+func (ds *userRepository) ReadAll(page int, pageSize int, search string) ([]*record.UserRecord, int, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
-	users := make([]models.User, 0, len(ds.users))
+	filteredUsers := make([]models.User, 0)
+
 	for _, user := range ds.users {
-		users = append(users, user)
+		if search == "" ||
+			strings.Contains(strings.ToLower(user.FirstName), strings.ToLower(search)) ||
+			strings.Contains(strings.ToLower(user.LastName), strings.ToLower(search)) ||
+			strings.Contains(strings.ToLower(user.Email), strings.ToLower(search)) {
+			filteredUsers = append(filteredUsers, user)
+		}
+	}
+	totalRecords := len(filteredUsers)
+
+	start := (page - 1) * pageSize
+	if start >= totalRecords {
+		return nil, totalRecords, nil
 	}
 
-	return ds.mapping.ToUsersRecord(users), nil
+	end := start + pageSize
+
+	if end > totalRecords {
+		end = totalRecords
+	}
+
+	paginatedUsers := filteredUsers[start:end]
+
+	return ds.mapping.ToUsersRecord(paginatedUsers), totalRecords, nil
 }
 
 func (ds *userRepository) Read(userID int) (*record.UserRecord, error) {

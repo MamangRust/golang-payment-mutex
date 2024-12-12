@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"payment-mutex/internal/domain/requests"
 	"payment-mutex/internal/domain/response"
@@ -128,6 +129,7 @@ func (h *handler) CreateMerchant(w http.ResponseWriter, r *http.Request) {
 			Status:  "error",
 			Message: "Invalid input",
 		}
+		fmt.Println(err.Error())
 		response.ResponseError(w, res)
 		return
 	}
@@ -157,6 +159,8 @@ func (h *handler) UpdateMerchant(w http.ResponseWriter, r *http.Request) {
 			Status:  "error",
 			Message: "Invalid input",
 		}
+
+		fmt.Println(err)
 		response.ResponseError(w, res)
 		return
 	}

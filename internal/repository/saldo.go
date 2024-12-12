@@ -92,13 +92,6 @@ func (ds *saldoRepository) Update(request requests.UpdateSaldoRequest) (*record.
 	saldo.CardNumber = request.CardNumber
 	saldo.TotalBalance = request.TotalBalance
 
-	if request.WithdrawAmount != nil {
-		saldo.WithdrawAmount = *request.WithdrawAmount
-	}
-	if request.WithdrawTime != nil {
-		saldo.WithdrawTime = *request.WithdrawTime
-	}
-
 	ds.saldos[request.SaldoID] = saldo
 
 	return ds.mapping.ToSaldoRecord(saldo), nil

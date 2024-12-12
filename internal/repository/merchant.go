@@ -91,7 +91,7 @@ func (ds *merchantRepository) Create(request requests.CreateMerchantRequest) (*r
 		MerchantID: ds.nextID,
 		ApiKey:     apikey.GenerateApiKey(),
 		Name:       request.Name,
-		UserID:     *request.UserID,
+		UserID:     request.UserID,
 		Status:     "active",
 	}
 
@@ -113,7 +113,7 @@ func (ds *merchantRepository) Update(request requests.UpdateMerchantRequest) (*r
 	}
 
 	merchant.Name = request.Name
-	merchant.UserID = *request.UserID
+	merchant.UserID = request.UserID
 	merchant.Status = request.Status
 
 	ds.merchants[request.MerchantID] = merchant

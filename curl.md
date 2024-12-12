@@ -67,25 +67,25 @@ curl -X POST http://localhost:8080/auth/login \
 ### Get All
 
 ```sh
-curl -X GET "http://localhost:8000/card/find_all" \
--H "Authorization: Bearer <your_token>"
+curl -X GET "http://localhost:8080/card/find_all" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM0MDMwMTg5fQ.CrT6yFE93SjCc74y3AGZCEmRNwLK19je-zPwwYuQPgY"
 ```
 
 ### Get ID
 
 ```sh
-curl -X GET "http://localhost:8000/card/find_by_id?id=1" \
--H "Authorization: Bearer <your_token>"
+curl -X GET "http://localhost:8080/card/find_by_id?id=1" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM0MDMwMTg5fQ.CrT6yFE93SjCc74y3AGZCEmRNwLK19je-zPwwYuQPgY"
 ```
 
 ### Create
 ```sh
-curl -X POST "http://localhost:8000/card/create" \
+curl -X POST "http://localhost:8080/card/create" \
 -H "Content-Type: application/json" \
--H "Authorization: Bearer <your_token>" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM0MDAxNDYxfQ.W5Roja93nDVM693jQ7UAzmV1OBLI4HsPzNhgcTJzBgs" \
 -d '{
   "user_id": 1,
-  "card_type": "Visa",
+  "card_type": "credit",
   "expire_date": "2025-12-31T00:00:00Z",
   "cvv": "123",
   "card_provider": "bni"
@@ -95,13 +95,13 @@ curl -X POST "http://localhost:8000/card/create" \
 ### Update
 
 ```sh
-curl -X PUT "http://localhost:8000/card/update?=id=1" \
+curl -X PUT "http://localhost:8080/card/update?=id=1" \
 -H "Content-Type: application/json" \
--H "Authorization: Bearer <your_token>" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM0MDMwMTg5fQ.CrT6yFE93SjCc74y3AGZCEmRNwLK19je-zPwwYuQPgY" \
 -d '{
   "card_id": 1,
   "user_id": 1,
-  "card_type": "MasterCard",
+  "card_type": "credit",
   "expire_date": "2026-06-30T00:00:00Z",
   "cvv": "456",
   "card_provider": "bca"
@@ -111,8 +111,8 @@ curl -X PUT "http://localhost:8000/card/update?=id=1" \
 ### Delete
 
 ```sh
-curl -X DELETE "http://localhost:8000/card/delete?id=1" \
--H "Authorization: Bearer <your_token>"
+curl -X DELETE "http://localhost:8080/card/delete?id=1" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM0MDMwMTg5fQ.CrT6yFE93SjCc74y3AGZCEmRNwLK19je-zPwwYuQPgY"
 ```
 -----------------------------------
 
@@ -121,25 +121,25 @@ curl -X DELETE "http://localhost:8000/card/delete?id=1" \
 ### Get All
 
 ```sh
-curl -X GET "http://localhost:8000/card/find_all" \
--H "Authorization: Bearer <your_token>"
+curl -X GET "http://localhost:8080/card/find_all" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwiZXhwIjoxNzM0MDMwMjM0fQ.GtDcZNcsgM-GoD6qhZgpux92Q0tTcsP4bE08L3Yr8u4"
 ```
 
 ### Get ID
 
 ```sh
-curl -X GET "http://localhost:8000/card/find_by_id?id=2" \
--H "Authorization: Bearer <your_token>"
+curl -X GET "http://localhost:8080/card/find_by_id?id=2" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwiZXhwIjoxNzM0MDMwMjM0fQ.GtDcZNcsgM-GoD6qhZgpux92Q0tTcsP4bE08L3Yr8u4"
 ```
 
 ### Create
 ```sh
-curl -X POST "http://localhost:8000/card/create" \
+curl -X POST "http://localhost:8080/card/create" \
 -H "Content-Type: application/json" \
--H "Authorization: Bearer <your_token>" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwiZXhwIjoxNzM0MDMwMjM0fQ.GtDcZNcsgM-GoD6qhZgpux92Q0tTcsP4bE08L3Yr8u4" \
 -d '{
   "user_id": 2,
-  "card_type": "Visa",
+  "card_type": "credit",
   "expire_date": "2025-12-31T00:00:00Z",
   "cvv": "123",
   "card_provider": "bni"
@@ -149,13 +149,13 @@ curl -X POST "http://localhost:8000/card/create" \
 ### Update
 
 ```sh
-curl -X PUT "http://localhost:8000/card/update?=id=2" \
+curl -X PUT "http://localhost:8080/card/update?=id=2" \
 -H "Content-Type: application/json" \
--H "Authorization: Bearer <your_token>" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwiZXhwIjoxNzM0MDMwMjM0fQ.GtDcZNcsgM-GoD6qhZgpux92Q0tTcsP4bE08L3Yr8u4" \
 -d '{
   "card_id": 2,
   "user_id": 2,
-  "card_type": "MasterCard",
+  "card_type": "debit",
   "expire_date": "2026-06-30T00:00:00Z",
   "cvv": "456",
   "card_provider": "bca"
@@ -165,8 +165,8 @@ curl -X PUT "http://localhost:8000/card/update?=id=2" \
 ### Delete
 
 ```sh
-curl -X DELETE "http://localhost:8000/card/delete?id=2" \
--H "Authorization: Bearer <your_token>"
+curl -X DELETE "http://localhost:8080/card/delete?id=2" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwiZXhwIjoxNzM0MDMwMjM0fQ.GtDcZNcsgM-GoD6qhZgpux92Q0tTcsP4bE08L3Yr8u4"
 ```
 
 ----------------------------------
@@ -176,42 +176,45 @@ curl -X DELETE "http://localhost:8000/card/delete?id=2" \
 ## Get All
 
 ```sh
-curl -X GET "http://localhost:8000/merchant/find_all" \
--H "Authorization: Bearer <your_token>"
+curl -X GET "http://localhost:8080/merchant/find_all" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM0MDMwMTg5fQ.CrT6yFE93SjCc74y3AGZCEmRNwLK19je-zPwwYuQPgY
+"
 ```
 
 ## Get ID
 
 ```sh
-curl -X GET "http://localhost:8000/merchant/find_by_id?id=1" \
--H "Authorization: Bearer <your_token>"
+curl -X GET "http://localhost:8080/merchant/find_by_id?id=1" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM0MDMwMTg5fQ.CrT6yFE93SjCc74y3AGZCEmRNwLK19je-zPwwYuQPgY
+"
 ```
 
 ## Get Name
 
 ```sh
-curl -X GET "http://localhost:8000/merchant/find_by_name?name=MerchantName" \
--H "Authorization: Bearer <your_token>"
+curl -X GET "http://localhost:8080/merchant/find_by_name?name=MerchantName" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM0MDMwMTg5fQ.CrT6yFE93SjCc74y3AGZCEmRNwLK19je-zPwwYuQPgY"
 ```
 
 ## Create
 
 ```sh
-curl -X POST "http://localhost:8000/merchant/create" \
+curl -X POST "http://localhost:8080/merchant/create" \
 -H "Content-Type: application/json" \
--H "Authorization: Bearer <your_token>" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM0MDMwMTg5fQ.CrT6yFE93SjCc74y3AGZCEmRNwLK19je-zPwwYuQPgY" \
 -d '{
-  "name": "New Merchant",
-  "user_id": 123
+  "name": "Ticket Dota",
+  "user_id": 1
 }'
+
 ```
 
 ## Update
 
 ```sh
-curl -X PUT "http://localhost:8000/merchant/update?=id=1" \
+curl -X PUT "http://localhost:8080/merchant/update?=id=1" \
 -H "Content-Type: application/json" \
--H "Authorization: Bearer <your_token>" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM0MDMwMTg5fQ.CrT6yFE93SjCc74y3AGZCEmRNwLK19je-zPwwYuQPgY" \
 -d '{
   "merchant_id": 1,
   "name": "Updated Merchant",
@@ -223,8 +226,8 @@ curl -X PUT "http://localhost:8000/merchant/update?=id=1" \
 ## Delete
 
 ```sh
-curl -X DELETE "http://localhost:8000/merchant/delete?id=1" \
--H "Authorization: Bearer <your_token>"
+curl -X DELETE "http://localhost:8080/merchant/delete?id=1" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM0MDMwMTg5fQ.CrT6yFE93SjCc74y3AGZCEmRNwLK19je-zPwwYuQPgY"
 ```
 
 
@@ -235,37 +238,38 @@ curl -X DELETE "http://localhost:8000/merchant/delete?id=1" \
 ## Get All
 
 ```sh
-curl -X GET "http://localhost:8000/transaction/find_all" \
--H "Authorization: Bearer <your_token>"
+curl -X GET "http://localhost:8080/transaction/find_all" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM0MDI2NzgzfQ.LGNCC1GF8iP_EGp5-YBL6Uif5VNcQ81an6lRy6X3S_Y"
 ```
 
 ## Get ID
 
 ```sh
-curl -X GET "http://localhost:8000/transaction/find_by_id?id=1" \
--H "Authorization: Bearer <your_token>"
+curl -X GET "http://localhost:8080/transaction/find_by_id?id=1" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwiZXhwIjoxNzM0MDMwMjM0fQ.GtDcZNcsgM-GoD6qhZgpux92Q0tTcsP4bE08L3Yr8u4"
 ```
 
 ## Create
 
 ```sh
-curl -X POST "http://localhost:8000/transaction/create" \
+curl -X POST "http://localhost:8080/transaction/create" \
 -H "Content-Type: application/json" \
--H "Authorization: Bearer <your_token>" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwiZXhwIjoxNzM0MDMwMjM0fQ.GtDcZNcsgM-GoD6qhZgpux92Q0tTcsP4bE08L3Yr8u4" \
 -d '{
-  "card_number": "1234-5678-9876-5432",
-  "amount": 500000,
-  "payment_method": "Credit Card",
+  "card_number": "4460909111027133",
+  "amount": 50000,
+  "payment_method": "bni",
   "transaction_time": "2024-12-10T15:04:05Z"
 }'
+
 ```
 
 ## Update
 
 ```sh
-curl -X PUT "http://localhost:8000/transaction/update" \
+curl -X PUT "http://localhost:8080/transaction/update/?id=1" \
 -H "Content-Type: application/json" \
--H "Authorization: Bearer <your_token>" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwiZXhwIjoxNzM0MDMwMjM0fQ.GtDcZNcsgM-GoD6qhZgpux92Q0tTcsP4bE08L3Yr8u4" \
 -d '{
   "transaction_id": 1,
   "card_number": "1234-5678-9876-5432",
@@ -278,8 +282,8 @@ curl -X PUT "http://localhost:8000/transaction/update" \
 ## Delete
 
 ```sh
-curl -X DELETE "http://localhost:8000/transaction/delete?id=1" \
--H "Authorization: Bearer <your_token>"
+curl -X DELETE "http://localhost:8080/transaction/delete?id=1" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwiZXhwIjoxNzM0MDMwMjM0fQ.GtDcZNcsgM-GoD6qhZgpux92Q0tTcsP4bE08L3Yr8u4"
 ```
 
 
@@ -293,13 +297,13 @@ curl -X DELETE "http://localhost:8000/transaction/delete?id=1" \
 
 ```sh
 curl -X GET http://localhost:8080/saldo/find_all \
--H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzIwNjI4ODIsImlhdCI6MTczMjA1OTI4Mn0.oXDLZmtHc7vjbauWW9eBqd5s8sIutK6o3gkQxYBV1jc"
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM0MDI3ODYyfQ.nSrm-y9YIgFNmsDXYHkEGypQYnKXdA1l_LwCMk_2rAc"
 ```
 
 ### Get Specific Saldo by ID
 
 ```sh
-curl -X GET http://localhost:8080/saldo/find_by_id/1 \
+curl -X GET "http://localhost:8080/saldo/find_by_id?id=1" \
 -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzIwNjM2NDAsImlhdCI6MTczMjA2MDA0MH0.A61IWywfRTetrqXTy9oBXGGdr5DBss-aU-1-SW46ZCw"
 ```
 
@@ -307,33 +311,31 @@ curl -X GET http://localhost:8080/saldo/find_by_id/1 \
 
 ```sh
 curl -X POST http://localhost:8080/saldo/create \
--H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzIwNjM2NDAsImlhdCI6MTczMjA2MDA0MH0.A61IWywfRTetrqXTy9oBXGGdr5DBss-aU-1-SW46ZCw" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM0MDAxNDYxfQ.W5Roja93nDVM693jQ7UAzmV1OBLI4HsPzNhgcTJzBgs" \
 -H "Content-Type: application/json" \
 -d '{
-  "card_number": 1,
-  "total_balance": 50000
+  "card_number": "4460909111027133",
+  "total_balance": 500000
 }'
 ```
 
 ### Update Saldo
 
 ```sh
-curl -X PUT http://localhost:8080/saldo/update/1 \
+curl -X PUT "http://localhost:8080/saldo/update?id=1" \
 -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzIwNjM2NDAsImlhdCI6MTczMjA2MDA0MH0.A61IWywfRTetrqXTy9oBXGGdr5DBss-aU-1-SW46ZCw" \
 -H "Content-Type: application/json" \
 -d '{
   "saldo_id": 1,
   "card_number": 1,
   "total_balance": 100000,
-  "withdraw_amount": 50000,
-  "withdraw_time": null
 }'
 ```
 
 ### Delete Saldo
 
 ```sh
-curl -X DELETE http://localhost:8080/saldo/delete/1 \
+curl -X DELETE "http://localhost:8080/saldo/delete?id=1" \
 -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzIwNjM2NDAsImlhdCI6MTczMjA2MDA0MH0.A61IWywfRTetrqXTy9oBXGGdr5DBss-aU-1-SW46ZCw"
 ```
 -------------------
@@ -346,13 +348,13 @@ curl -X DELETE http://localhost:8080/saldo/delete/1 \
 
 ```sh
 curl -X GET http://localhost:8080/saldo/find_all \
--H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3MzIwNjM2NzcsImlhdCI6MTczMjA2MDA3N30.k017TiFhBpsdLCvSKos10eMT4yd8ieuD_m-qMkfZV3s"
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM0MDI3ODYyfQ.nSrm-y9YIgFNmsDXYHkEGypQYnKXdA1l_LwCMk_2rAc"
 ```
 
 ### Get Specific Saldo by ID
 
 ```sh
-curl -X GET http://localhost:8080/saldo/find_by_id/1 \
+curl -X GET "http://localhost:8080/saldo/find_by_id?id=1" \
 -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3MzIwNjM2NzcsImlhdCI6MTczMjA2MDA3N30.k017TiFhBpsdLCvSKos10eMT4yd8ieuD_m-qMkfZV3s"
 ```
 
@@ -360,10 +362,10 @@ curl -X GET http://localhost:8080/saldo/find_by_id/1 \
 
 ```sh
 curl -X POST http://localhost:8080/saldo/create \
--H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3MzIwNjM2NzcsImlhdCI6MTczMjA2MDA3N30.k017TiFhBpsdLCvSKos10eMT4yd8ieuD_m-qMkfZV3s" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM0MDAxNjYzfQ.YEEX3i8h2KbVlF2Dz1dB9BkyxX716et15Tr2WQSuLK8" \
 -H "Content-Type: application/json" \
 -d '{
-  "card_number": 2,
+  "card_number": "4173630085552615",
   "total_balance": 50000
 }'
 ```
@@ -371,22 +373,20 @@ curl -X POST http://localhost:8080/saldo/create \
 ### Update Saldo
 
 ```sh
-curl -X PUT http://localhost:8080/saldo/update/1 \
--H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3MzIwNjM2NzcsImlhdCI6MTczMjA2MDA3N30.k017TiFhBpsdLCvSKos10eMT4yd8ieuD_m-qMkfZV3s" \
+curl -X PUT "http://localhost:8080/saldo/update?id=1" \
+-H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzM0MDAxNjYzfQ.YEEX3i8h2KbVlF2Dz1dB9BkyxX716et15Tr2WQSuLK8" \
 -H "Content-Type: application/json" \
 -d '{
   "saldo_id": 2,
-  "card_number": 2,
-  "total_balance": 100000,
-  "withdraw_amount": 50000,
-  "withdraw_time": null
+  "card_number": "4173630085552615",
+  "total_balance": 100000
 }'
 ```
 
 ### Delete Saldo
 
 ```sh
-curl -X DELETE http://localhost:8080/saldo/delete/1 \
+curl -X DELETE "http://localhost:8080/saldo/delete?id=1" \
 -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3MzIwNjM2NzcsImlhdCI6MTczMjA2MDA3N30.k017TiFhBpsdLCvSKos10eMT4yd8ieuD_m-qMkfZV3s"
 ```
 
@@ -408,7 +408,7 @@ curl -X GET http://localhost:8080/api/topup/find_all \
 ### Get Topup by ID
 
 ```sh
-curl -X GET http://localhost:8080/topup/find_by_id/1 \
+curl -X GET "http://localhost:8080/topup/find_by_id?id=1" \
      -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzIwNjgwNDEsImlhdCI6MTczMjA2NDQ0MX0.sZyj7nmY6RQOyQ0etO76AXTpj5r1MwZQDfnMpVuByo0" \
      -H "Content-Type: application/json"
 ```
@@ -431,7 +431,7 @@ curl -X POST http://localhost:8080/topup/create \
 ### Update an Existing Topup
 
 ```sh
-curl -X PUT http://localhost:8080/topup/update/1 \
+curl -X PUT "http://localhost:8080/topup/update?id=1" \
      -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzIwNjgwNDEsImlhdCI6MTczMjA2NDQ0MX0.sZyj7nmY6RQOyQ0etO76AXTpj5r1MwZQDfnMpVuByo0" \
      -H "Content-Type: application/json" \
      -d '{
@@ -445,7 +445,7 @@ curl -X PUT http://localhost:8080/topup/update/1 \
 ### Delete a Topup
 
 ```sh
-curl -X DELETE http://localhost:8080/topup/delete/1 \
+curl -X DELETE "http://localhost:8080/topup/delete?id=1" \
      -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzIwNjgwNDEsImlhdCI6MTczMjA2NDQ0MX0.sZyj7nmY6RQOyQ0etO76AXTpj5r1MwZQDfnMpVuByo0" \
      -H "Content-Type: application/json"
 ```
@@ -465,7 +465,7 @@ curl -X GET http://localhost:8080/topup/find_all \
 ### Get Topup by ID
 
 ```sh
-curl -X GET http://localhost:8080/topup/find_by_id/2 \
+curl -X GET "http://localhost:8080/topup/find_by_id?id=2" \
      -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3MzIwNjM2NzcsImlhdCI6MTczMjA2MDA3N30.k017TiFhBpsdLCvSKos10eMT4yd8ieuD_m-qMkfZV3s" \
      -H "Content-Type: application/json"
 ```
@@ -487,7 +487,7 @@ curl -X POST http://localhost:8080/topup/create \
 ### Update an Existing Topup
 
 ```sh
-curl -X PUT http://localhost:8080/topup/update/2 \
+curl -X PUT "http://localhost:8080/topup/update?id=2" \
      -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3MzIwNjM2NzcsImlhdCI6MTczMjA2MDA3N30.k017TiFhBpsdLCvSKos10eMT4yd8ieuD_m-qMkfZV3s" \
      -H "Content-Type: application/json" \
      -d '{
@@ -501,7 +501,7 @@ curl -X PUT http://localhost:8080/topup/update/2 \
 ### Delete a Topup
 
 ```sh
-curl -X DELETE http://localhost:8080/topup/delete/2 \
+curl -X DELETE "http://localhost:8080/topup/delete?id=2" \
      -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3MzIwNjM2NzcsImlhdCI6MTczMjA2MDA3N30.k017TiFhBpsdLCvSKos10eMT4yd8ieuD_m-qMkfZV3s" \
      -H "Content-Type: application/json"
 ```
@@ -522,7 +522,7 @@ curl -X GET http://localhost:8080/transfer/find_all \
 ## Get Transfer by ID
 
 ```sh
-curl -X GET http://localhost:8080/transfer/find_by_id \
+curl -X GET "http://localhost:8080/transfer/find_by_id?id=1" \
     -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzIwNzI2MTksImlhdCI6MTczMjA2OTAxOX0.we0y1YH05TQ-g46C2Q_v9-rkuQkrwA_H1DghHoSRlHY"
 ```
 
@@ -543,7 +543,7 @@ curl -X POST http://localhost:8080/transfer/create \
 ## Update an Existing Transfer
 
 ```sh
-curl -X PUT http://localhost:8080/transfer/update/1 \
+curl -X PUT "http://localhost:8080/transfer/update?id=1" \
     -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzIwNzI2MTksImlhdCI6MTczMjA2OTAxOX0.we0y1YH05TQ-g46C2Q_v9-rkuQkrwA_H1DghHoSRlHY" \
     -H "Content-Type: application/json" \
     -d '{
@@ -557,7 +557,7 @@ curl -X PUT http://localhost:8080/transfer/update/1 \
 ## Delete a Transfer
 
 ```sh
-curl -X DELETE http://localhost:8080/transfer/delete/1 \
+curl -X DELETE "http://localhost:8080/transfer/delete?id=1" \
     -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzIwNzI2MTksImlhdCI6MTczMjA2OTAxOX0.we0y1YH05TQ-g46C2Q_v9-rkuQkrwA_H1DghHoSRlHY"
 ```
 

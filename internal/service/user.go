@@ -28,22 +28,45 @@ func NewUserService(
 	}
 }
 
-func (ds *userService) FindAll() (*response.ApiResponse[[]*response.UserResponse], *response.ErrorResponse) {
-	users, err := ds.userRepository.ReadAll()
+func (ds *userService) FindAll(page int, pageSize int, search string) (*response.APIResponsePagination[[]*response.UserResponse], *response.ErrorResponse) {
+	if page <= 0 {
+		page = 1
+	}
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+
+	users, totalRecords, err := ds.userRepository.ReadAll(page, pageSize, search)
 	if err != nil {
-		ds.logger.Error("failed to find all users", zap.Error(err))
+		ds.logger.Error("failed to fetch users", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to retrieve users",
+			Message: "Failed to fetch users",
 		}
 	}
 
-	so := ds.mapper.ToUsersResponse(users)
+	if len(users) == 0 {
+		ds.logger.Error("no users found")
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "No users found",
+		}
+	}
 
-	return &response.ApiResponse[[]*response.UserResponse]{
+	userResponses := ds.mapper.ToUsersResponse(users)
+
+	totalPages := (totalRecords + pageSize - 1) / pageSize
+
+	return &response.APIResponsePagination[[]*response.UserResponse]{
 		Status:  "success",
 		Message: "Users retrieved successfully",
-		Data:    so,
+		Data:    userResponses,
+		Meta: response.PaginationMeta{
+			CurrentPage:  page,
+			PageSize:     pageSize,
+			TotalPages:   totalPages,
+			TotalRecords: totalRecords,
+		},
 	}, nil
 }
 
