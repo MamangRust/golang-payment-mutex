@@ -15,7 +15,7 @@ type UserRepository interface {
 }
 
 type SaldoRepository interface {
-	ReadAll() ([]*record.SaldoRecord, error)
+	ReadAll(page int, pageSize int, search string) ([]*record.SaldoRecord, int, error)
 	Read(saldoID int) (*record.SaldoRecord, error)
 	ReadByCardNumber(cardNumber string) (*record.SaldoRecord, error)
 	Create(request requests.CreateSaldoRequest) (*record.SaldoRecord, error)
@@ -26,7 +26,7 @@ type SaldoRepository interface {
 }
 
 type TopupRepository interface {
-	ReadAll() ([]*record.TopupRecord, error)
+	ReadAll(page int, pageSize int, search string) ([]*record.TopupRecord, int, error)
 	Read(topupID int) (*record.TopupRecord, error)
 	CountByDate(date string) (int, error)
 	Create(request requests.CreateTopupRequest) (*record.TopupRecord, error)
@@ -36,7 +36,7 @@ type TopupRepository interface {
 }
 
 type TransferRepository interface {
-	ReadAll() ([]*record.TransferRecord, error)
+	ReadAll(page int, pageSize int, search string) ([]*record.TransferRecord, int, error)
 	Read(transferID int) (*record.TransferRecord, error)
 	CountByDate(date string) (int, error)
 	CountAll() (int, error)
@@ -46,7 +46,7 @@ type TransferRepository interface {
 }
 
 type WithdrawRepository interface {
-	ReadAll() ([]*record.WithdrawRecord, error)
+	ReadAll(page int, pageSize int, search string) ([]*record.WithdrawRecord, int, error)
 	Read(withdrawID int) (*record.WithdrawRecord, error)
 	CountByDate(date string) (int, error)
 	Create(request requests.CreateWithdrawRequest) (*record.WithdrawRecord, error)
@@ -55,7 +55,7 @@ type WithdrawRepository interface {
 }
 
 type CardRepository interface {
-	ReadAll() ([]*record.CardRecord, error)
+	ReadAll(page int, pageSize int, search string) ([]*record.CardRecord, int, error)
 	Read(cardID int) (*record.CardRecord, error)
 	ReadByCardNumber(cardNumber string) (*record.CardRecord, error)
 	ReadByUsersID(userID int) ([]*record.CardRecord, error)
@@ -66,7 +66,7 @@ type CardRepository interface {
 }
 
 type TransactionRepository interface {
-	ReadAll() ([]*record.TransactionRecord, error)
+	ReadAll(page int, pageSize int, search string) ([]*record.TransactionRecord, int, error)
 	CountByDate(date string) (int, error)
 	CountAll() (int, error)
 	Read(transactionID int) (*record.TransactionRecord, error)
@@ -76,7 +76,7 @@ type TransactionRepository interface {
 }
 
 type MerchantRepository interface {
-	ReadAll() ([]*record.MerchantRecord, error)
+	ReadAll(page int, pageSize int, search string) ([]*record.MerchantRecord, int, error)
 	Read(merchantID int) (*record.MerchantRecord, error)
 	ReadByName(name string) (*record.MerchantRecord, error)
 	ReadByApiKey(apiKey string) (*record.MerchantRecord, error)

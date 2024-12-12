@@ -6,6 +6,7 @@ import (
 	"payment-mutex/internal/domain/requests"
 	recordmapper "payment-mutex/internal/mapper/record"
 	"payment-mutex/internal/models"
+	"strings"
 	"sync"
 )
 
@@ -24,17 +25,34 @@ func NewSaldoRepository(mapping recordmapper.SaldoRecordMapping) *saldoRepositor
 	}
 }
 
-func (ds *saldoRepository) ReadAll() ([]*record.SaldoRecord, error) {
+func (ds *saldoRepository) ReadAll(page int, pageSize int, search string) ([]*record.SaldoRecord, int, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
-	saldos := make([]models.Saldo, 0, len(ds.saldos))
+
+	filteredSaldos := make([]models.Saldo, 0)
+
 	for _, saldo := range ds.saldos {
-		saldos = append(saldos, saldo)
+		if search == "" ||
+			strings.Contains(strings.ToLower(saldo.CardNumber), strings.ToLower(search)) {
+			filteredSaldos = append(filteredSaldos, saldo)
+		}
 	}
-	if len(saldos) == 0 {
-		return nil, fmt.Errorf("no saldo found")
+
+	totalRecords := len(filteredSaldos)
+
+	start := (page - 1) * pageSize
+	if start >= totalRecords {
+		return nil, totalRecords, nil
 	}
-	return ds.mapping.ToSaldosRecord(saldos), nil
+
+	end := start + pageSize
+	if end > totalRecords {
+		end = totalRecords
+	}
+
+	paginatedSaldos := filteredSaldos[start:end]
+
+	return ds.mapping.ToSaldosRecord(paginatedSaldos), totalRecords, nil
 }
 
 func (ds *saldoRepository) Read(saldoID int) (*record.SaldoRecord, error) {

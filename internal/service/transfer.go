@@ -34,22 +34,47 @@ func NewTransferService(
 	}
 }
 
-func (s *transferService) FindAll() (*response.ApiResponse[[]*response.TransferResponse], *response.ErrorResponse) {
-	transfer, err := s.transferRepository.ReadAll()
+func (s *transferService) FindAll(page int, pageSize int, search string) (*response.APIResponsePagination[[]*response.TransferResponse], *response.ErrorResponse) {
+	if page <= 0 {
+		page = 1
+	}
+
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+
+	transfers, totalRecords, err := s.transferRepository.ReadAll(page, pageSize, search)
+
 	if err != nil {
-		s.logger.Error("failed to find all transfers", zap.Error(err))
+		s.logger.Error("failed to fetch transfers", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to retrieve transfers",
+			Message: "Failed to fetch transfers",
 		}
 	}
 
-	so := s.mapper.ToTransfersResponse(transfer)
+	if len(transfers) == 0 {
+		s.logger.Error("no transfers found")
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "No transfers found",
+		}
+	}
 
-	return &response.ApiResponse[[]*response.TransferResponse]{
+	so := s.mapper.ToTransfersResponse(transfers)
+
+	totalPages := (totalRecords + pageSize - 1) / pageSize
+
+	return &response.APIResponsePagination[[]*response.TransferResponse]{
 		Status:  "success",
 		Message: "Transfers retrieved successfully",
 		Data:    so,
+		Meta: response.PaginationMeta{
+			CurrentPage:  page,
+			PageSize:     pageSize,
+			TotalPages:   totalPages,
+			TotalRecords: totalRecords,
+		},
 	}, nil
 }
 

@@ -36,22 +36,47 @@ func NewTopupService(
 	}
 }
 
-func (s *topupService) FindAll() (*response.ApiResponse[[]*response.TopupResponse], *response.ErrorResponse) {
-	topup, err := s.topupRepository.ReadAll()
+func (s *topupService) FindAll(page int, pageSize int, search string) (*response.APIResponsePagination[[]*response.TopupResponse], *response.ErrorResponse) {
+	if page <= 0 {
+		page = 1
+	}
+
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+
+	topups, totalRecords, err := s.topupRepository.ReadAll(page, pageSize, search)
+
 	if err != nil {
-		s.logger.Error("failed to find all topups", zap.Error(err))
+		s.logger.Error("failed to fetch topups", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to fetch all topup records",
+			Message: "Failed to fetch topups",
 		}
 	}
 
-	so := s.mapper.ToTopupResponses(topup)
+	if len(topups) == 0 {
+		s.logger.Error("no topups found")
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "No topups found",
+		}
+	}
 
-	return &response.ApiResponse[[]*response.TopupResponse]{
+	so := s.mapper.ToTopupResponses(topups)
+
+	totalPages := (totalRecords + pageSize - 1) / pageSize
+
+	return &response.APIResponsePagination[[]*response.TopupResponse]{
 		Status:  "success",
-		Message: "Successfully fetched all topup records",
+		Message: "Successfully fetched topup records",
 		Data:    so,
+		Meta: response.PaginationMeta{
+			CurrentPage:  page,
+			TotalPages:   totalPages,
+			PageSize:     pageSize,
+			TotalRecords: totalRecords,
+		},
 	}, nil
 }
 

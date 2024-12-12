@@ -6,6 +6,7 @@ import (
 	"payment-mutex/internal/domain/requests"
 	recordmapper "payment-mutex/internal/mapper/record"
 	"payment-mutex/internal/models"
+	"strings"
 	"time"
 
 	"sync"
@@ -26,23 +27,36 @@ func NewTopupRepository(mapping recordmapper.TopupRecordMapping) *topupRepositor
 	}
 }
 
-func (ds *topupRepository) ReadAll() ([]*record.TopupRecord, error) {
+func (ds *topupRepository) ReadAll(page int, pageSize int, search string) ([]*record.TopupRecord, int, error) {
 	ds.mu.RLock()
-
 	defer ds.mu.RUnlock()
 
-	topups := make([]models.Topup, 0, len(ds.topups))
+	filteredTopups := make([]models.Topup, 0)
 
 	for _, topup := range ds.topups {
-		topups = append(topups, topup)
+		if search == "" ||
+			strings.Contains(strings.ToLower(topup.CardNumber), strings.ToLower(search)) ||
+			strings.Contains(strings.ToLower(topup.TopupNo), strings.ToLower(search)) ||
+			strings.Contains(strings.ToLower(topup.TopupMethod), strings.ToLower(search)) {
+			filteredTopups = append(filteredTopups, topup)
+		}
 	}
 
-	if len(topups) == 0 {
-		return nil, fmt.Errorf("no topup found")
+	totalRecords := len(filteredTopups)
+
+	start := (page - 1) * pageSize
+	if start >= totalRecords {
+		return nil, totalRecords, nil
 	}
 
-	return ds.mapping.ToTopupRecords(topups), nil
+	end := start + pageSize
+	if end > totalRecords {
+		end = totalRecords
+	}
 
+	paginatedTopups := filteredTopups[start:end]
+
+	return ds.mapping.ToTopupRecords(paginatedTopups), totalRecords, nil
 }
 
 func (ds *topupRepository) CountByDate(date string) (int, error) {

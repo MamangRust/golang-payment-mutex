@@ -6,6 +6,7 @@ import (
 	"payment-mutex/internal/domain/requests"
 	recordmapper "payment-mutex/internal/mapper/record"
 	"payment-mutex/internal/models"
+	"strings"
 	"sync"
 )
 
@@ -24,22 +25,35 @@ func NewTransactionRepository(mapping recordmapper.TransactionRecordMapping) *tr
 	}
 }
 
-func (ds *transactionRepository) ReadAll() ([]*record.TransactionRecord, error) {
+func (ds *transactionRepository) ReadAll(page int, pageSize int, search string) ([]*record.TransactionRecord, int, error) {
 	ds.mu.RLock()
-
 	defer ds.mu.RUnlock()
 
-	transactions := make([]models.Transaction, 0, len(ds.transactions))
+	filteredTransactions := make([]models.Transaction, 0)
 
 	for _, transaction := range ds.transactions {
-		transactions = append(transactions, transaction)
+		if search == "" ||
+			strings.Contains(strings.ToLower(transaction.CardNumber), strings.ToLower(search)) ||
+			strings.Contains(strings.ToLower(transaction.PaymentMethod), strings.ToLower(search)) {
+			filteredTransactions = append(filteredTransactions, transaction)
+		}
 	}
 
-	if len(transactions) == 0 {
-		return nil, fmt.Errorf("no transaction found")
+	totalRecords := len(filteredTransactions)
+
+	start := (page - 1) * pageSize
+	if start >= totalRecords {
+		return nil, totalRecords, nil
 	}
 
-	return ds.mapping.ToTransactionsRecord(transactions), nil
+	end := start + pageSize
+	if end > totalRecords {
+		end = totalRecords
+	}
+
+	paginatedTransactions := filteredTransactions[start:end]
+
+	return ds.mapping.ToTransactionsRecord(paginatedTransactions), totalRecords, nil
 }
 
 func (ds *transactionRepository) CountByDate(date string) (int, error) {

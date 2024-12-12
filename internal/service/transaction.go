@@ -38,22 +38,47 @@ func NewTransactionService(
 	}
 }
 
-func (s *transactionService) FindAll() (*response.ApiResponse[[]*response.TransactionResponse], *response.ErrorResponse) {
-	transactions, err := s.transactionRepository.ReadAll()
+func (s *transactionService) FindAll(page int, pageSize int, search string) (*response.APIResponsePagination[[]*response.TransactionResponse], *response.ErrorResponse) {
+	if page <= 0 {
+		page = 1
+	}
+
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+
+	transactions, totalRecords, err := s.transactionRepository.ReadAll(page, pageSize, search)
+
 	if err != nil {
-		s.logger.Error("failed to find transaction", zap.Error(err))
+		s.logger.Error("failed to fetch transactions", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Transaction not found",
+			Message: "Failed to fetch transactions",
 		}
 	}
 
+	if len(transactions) == 0 {
+		s.logger.Error("no transactions found")
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "No transactions found",
+		}
+	}
+
+	totalPages := (totalRecords + pageSize - 1) / pageSize
+
 	so := s.mapper.ToTransactionsResponse(transactions)
 
-	return &response.ApiResponse[[]*response.TransactionResponse]{
+	return &response.APIResponsePagination[[]*response.TransactionResponse]{
 		Status:  "success",
-		Message: "Transaction found",
+		Message: "Users retrieved successfully",
 		Data:    so,
+		Meta: response.PaginationMeta{
+			TotalRecords: totalRecords,
+			CurrentPage:  page,
+			TotalPages:   totalPages,
+			PageSize:     pageSize,
+		},
 	}, nil
 }
 
@@ -288,7 +313,6 @@ func (s *transactionService) Update(apiKey string, request requests.UpdateTransa
 		}
 	}
 
-	
 	so := s.mapper.ToTransactionResponse(*res)
 	return &response.ApiResponse[*response.TransactionResponse]{
 		Status:  "success",

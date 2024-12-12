@@ -19,7 +19,7 @@ type UserService interface {
 }
 
 type SaldoService interface {
-	FindAll() (*response.ApiResponse[[]*response.SaldoResponse], *response.ErrorResponse)
+	FindAll(page int, pageSize int, search string) (*response.APIResponsePagination[[]*response.SaldoResponse], *response.ErrorResponse)
 	FindById(saldoID int) (*response.ApiResponse[*response.SaldoResponse], *response.ErrorResponse)
 	Create(requests requests.CreateSaldoRequest) (*response.ApiResponse[*response.SaldoResponse], *response.ErrorResponse)
 	Update(requests requests.UpdateSaldoRequest) (*response.ApiResponse[*response.SaldoResponse], *response.ErrorResponse)
@@ -27,7 +27,7 @@ type SaldoService interface {
 }
 
 type TopupService interface {
-	FindAll() (*response.ApiResponse[[]*response.TopupResponse], *response.ErrorResponse)
+	FindAll(page int, pageSize int, search string) (*response.APIResponsePagination[[]*response.TopupResponse], *response.ErrorResponse)
 	FindById(topupID int) (*response.ApiResponse[*response.TopupResponse], *response.ErrorResponse)
 	Create(requests requests.CreateTopupRequest) (*response.ApiResponse[*response.TopupResponse], *response.ErrorResponse)
 	Update(requests requests.UpdateTopupRequest) (*response.ApiResponse[*response.TopupResponse], *response.ErrorResponse)
@@ -35,7 +35,7 @@ type TopupService interface {
 }
 
 type TransferService interface {
-	FindAll() (*response.ApiResponse[[]*response.TransferResponse], *response.ErrorResponse)
+	FindAll(page int, pageSize int, search string) (*response.APIResponsePagination[[]*response.TransferResponse], *response.ErrorResponse)
 	FindById(transferID int) (*response.ApiResponse[*response.TransferResponse], *response.ErrorResponse)
 	Create(requests requests.CreateTransferRequest) (*response.ApiResponse[*response.TransferResponse], *response.ErrorResponse)
 	Update(requests requests.UpdateTransferRequest) (*response.ApiResponse[*response.TransferResponse], *response.ErrorResponse)
@@ -43,7 +43,7 @@ type TransferService interface {
 }
 
 type CardService interface {
-	FindAll() (*response.ApiResponse[[]*response.CardResponse], *response.ErrorResponse)
+	FindAll(page int, pageSize int, search string) (*response.APIResponsePagination[[]*response.CardResponse], *response.ErrorResponse)
 	FindById(cardID int) (*response.ApiResponse[*response.CardResponse], *response.ErrorResponse)
 	Create(requests requests.CreateCardRequest) (*response.ApiResponse[*response.CardResponse], *response.ErrorResponse)
 	Update(requests requests.UpdateCardRequest) (*response.ApiResponse[*response.CardResponse], *response.ErrorResponse)
@@ -51,7 +51,7 @@ type CardService interface {
 }
 
 type WithdrawService interface {
-	FindAll() (*response.ApiResponse[[]*response.WithdrawResponse], *response.ErrorResponse)
+	FindAll(page int, pageSize int, search string) (*response.APIResponsePagination[[]*response.WithdrawResponse], *response.ErrorResponse)
 	FindById(withdrawID int) (*response.ApiResponse[*response.WithdrawResponse], *response.ErrorResponse)
 	Create(requests requests.CreateWithdrawRequest) (*response.ApiResponse[*response.WithdrawResponse], *response.ErrorResponse)
 	Update(requests requests.UpdateWithdrawRequest) (*response.ApiResponse[*response.WithdrawResponse], *response.ErrorResponse)
@@ -59,7 +59,7 @@ type WithdrawService interface {
 }
 
 type TransactionService interface {
-	FindAll() (*response.ApiResponse[[]*response.TransactionResponse], *response.ErrorResponse)
+	FindAll(page int, pageSize int, search string) (*response.APIResponsePagination[[]*response.TransactionResponse], *response.ErrorResponse)
 	FindById(transactionID int) (*response.ApiResponse[*response.TransactionResponse], *response.ErrorResponse)
 	Create(apikey string, requests requests.CreateTransactionRequest) (*response.ApiResponse[*response.TransactionResponse], *response.ErrorResponse)
 	Update(apikey string, requests requests.UpdateTransactionRequest) (*response.ApiResponse[*response.TransactionResponse], *response.ErrorResponse)
@@ -71,7 +71,7 @@ type DashboardService interface {
 }
 
 type MerchantService interface {
-	FindAll() (*response.ApiResponse[[]*response.MerchantResponse], *response.ErrorResponse)
+	FindAll(page int, pageSize int, search string) (*response.APIResponsePagination[[]*response.MerchantResponse], *response.ErrorResponse)
 	FindByName(name string) (*response.ApiResponse[*response.MerchantResponse], *response.ErrorResponse)
 	FindByApiKey(apiKey string) (*response.ApiResponse[*response.MerchantResponse], *response.ErrorResponse)
 	FindByID(merchantID int) (*response.ApiResponse[*response.MerchantResponse], *response.ErrorResponse)

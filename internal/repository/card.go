@@ -8,6 +8,7 @@ import (
 	"payment-mutex/internal/models"
 	"payment-mutex/pkg/randomvcc"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -26,22 +27,36 @@ func NewCardRepository(mapping recordmapper.CardRecordMapping) *cardRepository {
 	}
 }
 
-func (ds *cardRepository) ReadAll() ([]*record.CardRecord, error) {
+func (ds *cardRepository) ReadAll(page int, pageSize int, search string) ([]*record.CardRecord, int, error) {
 	ds.mu.RLock()
-
 	defer ds.mu.RUnlock()
 
-	cards := make([]models.Card, 0, len(ds.cards))
+	filteredCards := make([]models.Card, 0)
 
 	for _, card := range ds.cards {
-		cards = append(cards, card)
+		if search == "" ||
+			strings.Contains(strings.ToLower(card.CardNumber), strings.ToLower(search)) ||
+			strings.Contains(strings.ToLower(card.CardType), strings.ToLower(search)) ||
+			strings.Contains(strings.ToLower(card.CardProvider), strings.ToLower(search)) {
+			filteredCards = append(filteredCards, card)
+		}
 	}
 
-	if len(cards) == 0 {
-		return nil, fmt.Errorf("no card found")
+	totalRecords := len(filteredCards)
+
+	start := (page - 1) * pageSize
+	if start >= totalRecords {
+		return nil, totalRecords, nil
 	}
 
-	return ds.mapping.ToCardsRecord(cards), nil
+	end := start + pageSize
+	if end > totalRecords {
+		end = totalRecords
+	}
+
+	paginatedCards := filteredCards[start:end]
+
+	return ds.mapping.ToCardsRecord(paginatedCards), totalRecords, nil
 }
 
 func (ds *cardRepository) Read(cardID int) (*record.CardRecord, error) {

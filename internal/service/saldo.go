@@ -32,8 +32,17 @@ func NewSaldoService(
 	}
 }
 
-func (s *saldoService) FindAll() (*response.ApiResponse[[]*response.SaldoResponse], *response.ErrorResponse) {
-	saldo, err := s.saldoRepository.ReadAll()
+func (s *saldoService) FindAll(page int, pageSize int, search string) (*response.APIResponsePagination[[]*response.SaldoResponse], *response.ErrorResponse) {
+	if page <= 0 {
+		page = 1
+	}
+
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+
+	saldos, totalRecords, err := s.saldoRepository.ReadAll(page, pageSize, search)
+
 	if err != nil {
 		s.logger.Error("failed find all saldo", zap.Error(err))
 		return nil, &response.ErrorResponse{
@@ -42,12 +51,28 @@ func (s *saldoService) FindAll() (*response.ApiResponse[[]*response.SaldoRespons
 		}
 	}
 
-	so := s.mapper.ToSaldoResponses(saldo)
+	if len(saldos) == 0 {
+		s.logger.Error("no saldo found")
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "No saldo found",
+		}
+	}
 
-	return &response.ApiResponse[[]*response.SaldoResponse]{
+	so := s.mapper.ToSaldoResponses(saldos)
+
+	totalPages := (totalRecords + pageSize - 1) / pageSize
+
+	return &response.APIResponsePagination[[]*response.SaldoResponse]{
 		Status:  "success",
 		Message: "Successfully fetched all saldo records",
 		Data:    so,
+		Meta: response.PaginationMeta{
+			CurrentPage:  page,
+			PageSize:     pageSize,
+			TotalPages:   totalPages,
+			TotalRecords: totalRecords,
+		},
 	}, nil
 }
 

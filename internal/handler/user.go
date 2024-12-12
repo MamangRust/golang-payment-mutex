@@ -42,11 +42,8 @@ func (h *handler) FindAllUser(w http.ResponseWriter, r *http.Request) {
 	res, errRes := h.services.User.FindAll(page, pageSize, search)
 
 	if errRes != nil {
-		errRes := response.ErrorResponse{
-			Status:  "error",
-			Message: "Error finding all users",
-		}
-		response.ResponseError(w, errRes)
+
+		response.ResponseError(w, *errRes)
 		return
 	}
 

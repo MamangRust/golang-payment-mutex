@@ -30,24 +30,49 @@ func NewMerchantService(
 	}
 }
 
-func (s *merchantService) FindAll() (*response.ApiResponse[[]*response.MerchantResponse], *response.ErrorResponse) {
-	merchants, err := s.merchantRepository.ReadAll()
+func (s *merchantService) FindAll(page int, pageSize int, search string) (*response.APIResponsePagination[[]*response.MerchantResponse], *response.ErrorResponse) {
+	if page <= 0 {
+		page = 1
+	}
+
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+
+	merchants, totalRecords, err := s.merchantRepository.ReadAll(page, pageSize, search)
 
 	if err != nil {
-		s.logger.Error("failed to find all merchants", zap.Error(err))
+		s.logger.Error("failed to fetch merchants", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to retrieve merchants",
+			Message: "Failed to fetch merchants",
+		}
+	}
+
+	if len(merchants) == 0 {
+		s.logger.Error("no merchants found")
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "No merchants found",
 		}
 	}
 
 	so := s.mapper.ToMerchantsResponse(merchants)
 
-	return &response.ApiResponse[[]*response.MerchantResponse]{
+	totalPages := (totalRecords + pageSize - 1) / pageSize
+
+	return &response.APIResponsePagination[[]*response.MerchantResponse]{
 		Status:  "success",
 		Message: "Merchants retrieved successfully",
 		Data:    so,
+		Meta: response.PaginationMeta{
+			CurrentPage:  page,
+			PageSize:     pageSize,
+			TotalPages:   totalPages,
+			TotalRecords: totalRecords,
+		},
 	}, nil
+
 }
 
 func (s *merchantService) FindByID(id int) (*response.ApiResponse[*response.MerchantResponse], *response.ErrorResponse) {

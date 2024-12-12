@@ -47,8 +47,7 @@ func (s *dashboardService) GetGlobalOverview() (*response.ApiResponse[*response.
 		ActivityTrends: make(map[string]int),
 	}
 
-	// 1. Calculate Total Balance and Active Cards
-	cards, err := s.cardRepository.ReadAll()
+	cards, _, err := s.cardRepository.ReadAll(1, 1000, "")
 	if err != nil {
 		s.logger.Error("failed to fetch cards", zap.Error(err))
 		return nil, &response.ErrorResponse{
@@ -62,7 +61,7 @@ func (s *dashboardService) GetGlobalOverview() (*response.ApiResponse[*response.
 	for _, card := range cards {
 		saldo, err := s.saldoRepository.ReadByCardNumber(card.CardNumber)
 		if err != nil {
-			continue // Skip cards with no saldo data
+			continue
 		}
 		totalBalance += saldo.TotalBalance
 		activeCards++
@@ -70,19 +69,17 @@ func (s *dashboardService) GetGlobalOverview() (*response.ApiResponse[*response.
 	overview.TotalBalance = totalBalance
 	overview.ActiveCards = activeCards
 
-	// 2. Count Total Transactions
-	totalTransactions, err := s.transactionRepository.CountAll()
+	totalTransactions, _, err := s.transactionRepository.ReadAll(1, 1000, "")
 	if err != nil {
-		s.logger.Error("failed to count transactions", zap.Error(err))
+		s.logger.Error("failed to fetch transactions", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to count transactions",
+			Message: "Failed to fetch transaction data",
 		}
 	}
-	overview.TotalTransaksi = totalTransactions
+	overview.TotalTransaksi = len(totalTransactions)
 
-	// 3. Count and Sum Topups
-	topups, err := s.topupRepository.ReadAll()
+	topups, _, err := s.topupRepository.ReadAll(1, 1000, "")
 	if err != nil {
 		s.logger.Error("failed to fetch topups", zap.Error(err))
 		return nil, &response.ErrorResponse{
@@ -100,8 +97,7 @@ func (s *dashboardService) GetGlobalOverview() (*response.ApiResponse[*response.
 	overview.TotalTopup = totalTopup
 	overview.TopupAmount = topupAmount
 
-	// 4. Count and Sum Withdrawals
-	withdrawals, err := s.withdrawRepository.ReadAll()
+	withdrawals, _, err := s.withdrawRepository.ReadAll(1, 1000, "")
 	if err != nil {
 		s.logger.Error("failed to fetch withdrawals", zap.Error(err))
 		return nil, &response.ErrorResponse{
@@ -119,18 +115,16 @@ func (s *dashboardService) GetGlobalOverview() (*response.ApiResponse[*response.
 	overview.TotalWithdraw = totalWithdraw
 	overview.WithdrawAmount = withdrawAmount
 
-	// 5. Count Total Transfers
-	totalTransfers, err := s.transferRepository.CountAll()
+	transfers, _, err := s.transferRepository.ReadAll(1, 1000, "")
 	if err != nil {
-		s.logger.Error("failed to count transfers", zap.Error(err))
+		s.logger.Error("failed to fetch transfers", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to count transfer data",
+			Message: "Failed to fetch transfer data",
 		}
 	}
-	overview.TotalTransfer = totalTransfers
+	overview.TotalTransfer = len(transfers)
 
-	// 6. Generate Activity Trends (Past 7 Days)
 	now := time.Now()
 	startDate := now.AddDate(0, 0, -7)
 	for d := startDate; d.Before(now); d = d.AddDate(0, 0, 1) {
@@ -143,7 +137,7 @@ func (s *dashboardService) GetGlobalOverview() (*response.ApiResponse[*response.
 		overview.ActivityTrends[date] = transactions + topups + withdrawals + transfers
 	}
 
-	merchants, err := s.merchantRepository.ReadAll()
+	merchants, _, err := s.merchantRepository.ReadAll(1, 1000, "")
 	if err != nil {
 		s.logger.Error("failed to fetch merchants", zap.Error(err))
 		return nil, &response.ErrorResponse{
@@ -162,6 +156,7 @@ func (s *dashboardService) GetGlobalOverview() (*response.ApiResponse[*response.
 	overview.TotalMerchants = totalMerchants
 	overview.ActiveMerchants = activeMerchants
 
+	// Return the overview response
 	return &response.ApiResponse[*response.OverviewData]{
 		Status:  "success",
 		Message: "Global overview retrieved successfully",

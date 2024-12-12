@@ -6,6 +6,7 @@ import (
 	"payment-mutex/internal/domain/requests"
 	recordmapper "payment-mutex/internal/mapper/record"
 	"payment-mutex/internal/models"
+	"strings"
 	"time"
 
 	"sync"
@@ -26,21 +27,35 @@ func NewTransferRepository(mapping recordmapper.TransferRecordMapping) *transfer
 	}
 }
 
-func (ds *transferRepository) ReadAll() ([]*record.TransferRecord, error) {
+func (ds *transferRepository) ReadAll(page int, pageSize int, search string) ([]*record.TransferRecord, int, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
-	transfers := make([]models.Transfer, 0, len(ds.transfers))
+	filteredTransfers := make([]models.Transfer, 0)
 
 	for _, transfer := range ds.transfers {
-		transfers = append(transfers, transfer)
+		if search == "" ||
+			strings.Contains(strings.ToLower(transfer.TransferFrom), strings.ToLower(search)) ||
+			strings.Contains(strings.ToLower(transfer.TransferTo), strings.ToLower(search)) {
+			filteredTransfers = append(filteredTransfers, transfer)
+		}
 	}
 
-	if len(transfers) == 0 {
-		return nil, fmt.Errorf("no transfer found")
+	totalRecords := len(filteredTransfers)
+
+	start := (page - 1) * pageSize
+	if start >= totalRecords {
+		return nil, totalRecords, nil
 	}
 
-	return ds.mapping.ToTransfersRecord(transfers), nil
+	end := start + pageSize
+	if end > totalRecords {
+		end = totalRecords
+	}
+
+	paginatedTransfers := filteredTransfers[start:end]
+
+	return ds.mapping.ToTransfersRecord(paginatedTransfers), totalRecords, nil
 }
 
 func (ds *transferRepository) CountByDate(date string) (int, error) {

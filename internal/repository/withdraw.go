@@ -6,6 +6,7 @@ import (
 	"payment-mutex/internal/domain/requests"
 	recordmapper "payment-mutex/internal/mapper/record"
 	"payment-mutex/internal/models"
+	"strings"
 	"sync"
 )
 
@@ -24,21 +25,34 @@ func NewWithdrawRepository(mapping recordmapper.WithdrawRecordMapping) *withdraw
 	}
 }
 
-func (ds *withdrawRepository) ReadAll() ([]*record.WithdrawRecord, error) {
+func (ds *withdrawRepository) ReadAll(page int, pageSize int, search string) ([]*record.WithdrawRecord, int, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
-	withdraws := make([]models.Withdraw, 0, len(ds.withdraw))
+	filteredWithdraws := make([]models.Withdraw, 0)
 
 	for _, withdraw := range ds.withdraw {
-		withdraws = append(withdraws, withdraw)
-	}
-	if len(withdraws) == 0 {
-		return nil, fmt.Errorf("no withdraw found")
+		if search == "" ||
+			strings.Contains(strings.ToLower(withdraw.CardNumber), strings.ToLower(search)) {
+			filteredWithdraws = append(filteredWithdraws, withdraw)
+		}
 	}
 
-	return ds.mapping.ToWithdrawsRecord(withdraws), nil
+	totalRecords := len(filteredWithdraws)
 
+	start := (page - 1) * pageSize
+	if start >= totalRecords {
+		return nil, totalRecords, nil
+	}
+
+	end := start + pageSize
+	if end > totalRecords {
+		end = totalRecords
+	}
+
+	paginatedWithdraws := filteredWithdraws[start:end]
+
+	return ds.mapping.ToWithdrawsRecord(paginatedWithdraws), totalRecords, nil
 }
 
 func (ds *withdrawRepository) CountByDate(date string) (int, error) {

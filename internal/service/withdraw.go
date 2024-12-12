@@ -30,22 +30,47 @@ func NewWithdrawService(
 	}
 }
 
-func (s *withdrawService) FindAll() (*response.ApiResponse[[]*response.WithdrawResponse], *response.ErrorResponse) {
-	withdraws, err := s.withdrawRepository.ReadAll()
+func (s *withdrawService) FindAll(page int, pageSize int, search string) (*response.APIResponsePagination[[]*response.WithdrawResponse], *response.ErrorResponse) {
+	if page <= 0 {
+		page = 1
+	}
+
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+
+	withdraws, totalRecords, err := s.withdrawRepository.ReadAll(page, pageSize, search)
+
 	if err != nil {
-		s.logger.Error("failed to find all withdraws", zap.Error(err))
+		s.logger.Error("failed to fetch withdraws", zap.Error(err))
 		return nil, &response.ErrorResponse{
 			Status:  "error",
-			Message: "Failed to fetch all withdraw records.",
+			Message: "Failed to fetch withdraws",
 		}
 	}
 
-	so := s.mapper.ToWithdrawsResponse(withdraws)
+	if len(withdraws) == 0 {
+		s.logger.Error("no withdraws found")
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "No withdraws found",
+		}
+	}
 
-	return &response.ApiResponse[[]*response.WithdrawResponse]{
+	withdrawResponse := s.mapper.ToWithdrawsResponse(withdraws)
+
+	totalPages := (totalRecords + pageSize - 1) / pageSize
+
+	return &response.APIResponsePagination[[]*response.WithdrawResponse]{
 		Status:  "success",
-		Message: "Successfully retrieved all withdraw records.",
-		Data:    so,
+		Message: "Successfully retrieved withdraw records.",
+		Data:    withdrawResponse,
+		Meta: response.PaginationMeta{
+			CurrentPage:  page,
+			PageSize:     pageSize,
+			TotalPages:   totalPages,
+			TotalRecords: totalRecords,
+		},
 	}, nil
 }
 

@@ -36,8 +36,16 @@ func NewCardService(
 	}
 }
 
-func (s *cardService) FindAll() (*response.ApiResponse[[]*response.CardResponse], *response.ErrorResponse) {
-	card, err := s.cardRepository.ReadAll()
+func (s *cardService) FindAll(page int, pageSize int, search string) (*response.APIResponsePagination[[]*response.CardResponse], *response.ErrorResponse) {
+	if page <= 0 {
+		page = 1
+	}
+
+	if pageSize <= 0 {
+		pageSize = 10
+	}
+
+	cards, totalRecords, err := s.cardRepository.ReadAll(page, pageSize, search)
 
 	if err != nil {
 		s.logger.Error("failed find all card", zap.Error(err))
@@ -47,12 +55,27 @@ func (s *cardService) FindAll() (*response.ApiResponse[[]*response.CardResponse]
 		}
 	}
 
-	so := s.mapper.ToCardsResponse(card)
+	if len(cards) == 0 {
+		s.logger.Error("no cards found")
+		return nil, &response.ErrorResponse{
+			Status:  "error",
+			Message: "No cards found",
+		}
+	}
+	so := s.mapper.ToCardsResponse(cards)
 
-	return &response.ApiResponse[[]*response.CardResponse]{
+	totalPages := (totalRecords + pageSize - 1) / pageSize
+
+	return &response.APIResponsePagination[[]*response.CardResponse]{
 		Status:  "success",
 		Message: "Successfully fetched all card records",
 		Data:    so,
+		Meta: response.PaginationMeta{
+			CurrentPage:  page,
+			PageSize:     pageSize,
+			TotalPages:   totalPages,
+			TotalRecords: totalRecords,
+		},
 	}, nil
 }
 

@@ -23,9 +23,21 @@ func (h *handler) FindAllWithdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := h.services.Withdraw.FindAll()
+	page, err := strconv.Atoi(r.URL.Query().Get("page"))
+	if err != nil || page <= 0 {
+		page = 1
+	}
 
-	if err != nil {
+	pageSize, err := strconv.Atoi(r.URL.Query().Get("pageSize"))
+	if err != nil || pageSize <= 0 {
+		pageSize = 10
+	}
+
+	search := r.URL.Query().Get("search")
+
+	res, errRes := h.services.Withdraw.FindAll(page, pageSize, search)
+
+	if errRes != nil {
 		res := response.ErrorResponse{
 			Status:  "error",
 			Message: "Error find all saldo",

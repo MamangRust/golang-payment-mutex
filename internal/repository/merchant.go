@@ -7,6 +7,7 @@ import (
 	recordmapper "payment-mutex/internal/mapper/record"
 	"payment-mutex/internal/models"
 	"payment-mutex/pkg/apikey"
+	"strings"
 	"sync"
 )
 
@@ -25,22 +26,36 @@ func NewMerchantRepository(mapping recordmapper.MerchantRecordMapping) *merchant
 	}
 }
 
-func (ds *merchantRepository) ReadAll() ([]*record.MerchantRecord, error) {
+func (ds *merchantRepository) ReadAll(page int, pageSize int, search string) ([]*record.MerchantRecord, int, error) {
 	ds.mu.RLock()
 	defer ds.mu.RUnlock()
 
-	merchants := make([]models.Merchant, 0, len(ds.merchants))
+	filteredMerchants := make([]models.Merchant, 0)
 
 	for _, merchant := range ds.merchants {
-		merchants = append(merchants, merchant)
+		if search == "" ||
+			strings.Contains(strings.ToLower(merchant.Name), strings.ToLower(search)) ||
+			strings.Contains(strings.ToLower(merchant.ApiKey), strings.ToLower(search)) ||
+			strings.Contains(strings.ToLower(merchant.Status), strings.ToLower(search)) {
+			filteredMerchants = append(filteredMerchants, merchant)
+		}
 	}
 
-	if len(merchants) == 0 {
-		return nil, fmt.Errorf("no merchant found")
+	totalRecords := len(filteredMerchants)
+
+	start := (page - 1) * pageSize
+	if start >= totalRecords {
+		return nil, totalRecords, nil
 	}
 
-	return ds.mapping.ToMerchantsRecord(merchants), nil
+	end := start + pageSize
+	if end > totalRecords {
+		end = totalRecords
+	}
 
+	paginatedMerchants := filteredMerchants[start:end]
+
+	return ds.mapping.ToMerchantsRecord(paginatedMerchants), totalRecords, nil
 }
 
 func (ds *merchantRepository) Read(merchantID int) (*record.MerchantRecord, error) {
