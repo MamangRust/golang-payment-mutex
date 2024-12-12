@@ -272,7 +272,7 @@ curl -X PUT "http://localhost:8080/transaction/update/?id=1" \
 -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIyIiwiZXhwIjoxNzM0MDMwMjM0fQ.GtDcZNcsgM-GoD6qhZgpux92Q0tTcsP4bE08L3Yr8u4" \
 -d '{
   "transaction_id": 1,
-  "card_number": "1234-5678-9876-5432",
+  "card_number": "4460909111027133",
   "amount": 600000,
   "payment_method": "Debit Card",
   "transaction_time": "2024-12-11T15:04:05Z"
@@ -421,7 +421,7 @@ curl -X POST http://localhost:8080/topup/create \
      -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzIwNjgwNDEsImlhdCI6MTczMjA2NDQ0MX0.sZyj7nmY6RQOyQ0etO76AXTpj5r1MwZQDfnMpVuByo0" \
      -H "Content-Type: application/json" \
      -d '{
-           "card_number": 1,
+           "card_number": "4460909111027133",
            "topup_no": "TX123456",
            "topup_amount": 100000,
            "topup_method": "alfamart"
@@ -435,7 +435,7 @@ curl -X PUT "http://localhost:8080/topup/update?id=1" \
      -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzIwNjgwNDEsImlhdCI6MTczMjA2NDQ0MX0.sZyj7nmY6RQOyQ0etO76AXTpj5r1MwZQDfnMpVuByo0" \
      -H "Content-Type: application/json" \
      -d '{
-           "card_number": 1,
+           "card_number": "4460909111027133",
            "topup_id": 1,
            "topup_amount": 150000,
            "topup_method": "indomart"
@@ -477,7 +477,7 @@ curl -X POST http://localhost:8080/topup/create \
      -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3MzIwNjM2NzcsImlhdCI6MTczMjA2MDA3N30.k017TiFhBpsdLCvSKos10eMT4yd8ieuD_m-qMkfZV3s" \
      -H "Content-Type: application/json" \
      -d '{
-           "card_number": 2,
+           "card_number": "4173630085552615",
            "topup_no": "TX123456",
            "topup_amount": 100000,
            "topup_method": "alfamart"
@@ -491,7 +491,7 @@ curl -X PUT "http://localhost:8080/topup/update?id=2" \
      -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3MzIwNjM2NzcsImlhdCI6MTczMjA2MDA3N30.k017TiFhBpsdLCvSKos10eMT4yd8ieuD_m-qMkfZV3s" \
      -H "Content-Type: application/json" \
      -d '{
-           "card_number": 2,
+           "card_number": "4173630085552615",
            "topup_id": 2,
            "topup_amount": 150000,
            "topup_method": "indomart"
@@ -534,8 +534,8 @@ curl -X POST http://localhost:8080/transfer/create \
     -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzIwNzI2MTksImlhdCI6MTczMjA2OTAxOX0.we0y1YH05TQ-g46C2Q_v9-rkuQkrwA_H1DghHoSRlHY" \
     -H "Content-Type: application/json" \
     -d '{
-        "transfer_from": 1,
-        "transfer_to": 2,
+        "transfer_from": "4460909111027133",
+        "transfer_to": "4173630085552615",
         "transfer_amount": 1000
     }'
 ```
@@ -548,8 +548,8 @@ curl -X PUT "http://localhost:8080/transfer/update?id=1" \
     -H "Content-Type: application/json" \
     -d '{
         "transfer_id": 1,
-        "transfer_from": 1,
-        "transfer_to": 2,
+        "transfer_from": "4460909111027133",
+        "transfer_to": "4173630085552615",
         "transfer_amount": 100000
     }'
 ```
@@ -585,8 +585,8 @@ curl -X POST http://localhost:8080/transfer/create \
     -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3MzIwNzMxNzMsImlhdCI6MTczMjA2OTU3M30.fSWyOTrtvAUxZtIs3JXe0GZxL-xbOzy0r5bE-TI3ZzY" \
     -H "Content-Type: application/json" \
     -d '{
-        "transfer_from": 2,
-        "transfer_to": 1,
+        "transfer_from": "4173630085552615",
+        "transfer_to": "4460909111027133",
         "transfer_amount": 1000
     }'
 ```
@@ -599,8 +599,8 @@ curl -X PUT http://localhost:8080/transfer/update/2 \
     -H "Content-Type: application/json" \
     -d '{
         "transfer_id": 2,
-        "transfer_from": 2,
-        "transfer_to": 1,
+        "transfer_from": "4173630085552615",
+        "transfer_to": "4460909111027133",
         "transfer_amount": 100000
     }'
 ```
@@ -640,7 +640,7 @@ curl -X POST http://localhost:8080/withdraw/create \
      -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzIwNzI2MTksImlhdCI6MTczMjA2OTAxOX0.we0y1YH05TQ-g46C2Q_v9-rkuQkrwA_H1DghHoSRlHY" \
      -H "Content-Type: application/json" \
      -d '{
-             "card_number": 1,
+             "card_number": "4460909111027133",
              "withdraw_amount": 100000,
              "withdraw_time": "2024-12-08T10:30:00Z"
          }'
@@ -653,7 +653,7 @@ curl -X PUT http://localhost:8080/withdraw/update/1 \
      -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoxLCJleHAiOjE3MzIwNzI2MTksImlhdCI6MTczMjA2OTAxOX0.we0y1YH05TQ-g46C2Q_v9-rkuQkrwA_H1DghHoSRlHY" \
      -H "Content-Type: application/json" \
      -d '{
-         "card_number": 1,
+         "card_number": "4460909111027133",
          "withdraw_id": 1,
          "withdraw_amount": 100000,
          "withdraw_time": "2024-12-08T10:30:00Z"
@@ -692,7 +692,7 @@ curl -X POST http://localhost:8080/withdraw/create \
      -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3MzIwNzMxNzMsImlhdCI6MTczMjA2OTU3M30.fSWyOTrtvAUxZtIs3JXe0GZxL-xbOzy0r5bE-TI3ZzY" \
      -H "Content-Type: application/json" \
      -d '{
-         "card_number": 1,
+         "card_number": "4173630085552615",
          "withdraw_amount": 100000,
          "withdraw_time": "2024-12-08T10:30:00Z"
      }'
@@ -705,7 +705,7 @@ curl -X PUT http://localhost:8080/withdraw/update/2 \
      -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoyLCJleHAiOjE3MzIwNzMxNzMsImlhdCI6MTczMjA2OTU3M30.fSWyOTrtvAUxZtIs3JXe0GZxL-xbOzy0r5bE-TI3ZzY" \
      -H "Content-Type: application/json" \
      -d '{
-         "card_number": 2,
+         "card_number": "4173630085552615",
          "withdraw_id": 2,
          "withdraw_amount": 100000,
          "withdraw_time": "2024-12-08T10:30:00Z"
